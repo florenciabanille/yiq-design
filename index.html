@@ -186,88 +186,84 @@ textarea.inp{height:auto;min-height:72px;padding:9px 11px;resize:vertical}
 .ep{border-top:1px solid var(--p100);background:var(--p25);padding:14px 18px 18px}
 .ep.hidden{display:none}
 
-/* ── PRODUCT SWITCHER ── */
-#sw-ov{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(15,20,30,.55);backdrop-filter:blur(4px)}
-#sw-ov.hidden{display:none}
-.sw-md{background:#fff;border-radius:14px;width:660px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;font-family:var(--f)}
-.sw-hd{padding:26px 30px 18px;border-bottom:1px solid #f0f0f0;position:relative}
-.sw-t{font-size:20px;font-weight:700;color:#1a2332;margin-bottom:3px}
-.sw-s{font-size:13px;color:#6a7585}
-.sw-x{position:absolute;top:18px;right:22px;background:none;border:none;cursor:pointer;font-size:18px;color:#9aa3ae;line-height:1}
-.sw-bd{padding:20px 30px 26px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.sw-card{border-radius:10px;border:2px solid #e8edf3;padding:20px;cursor:pointer;transition:all .15s;position:relative}
-.sw-card:hover{border-color:#1a7fa8;box-shadow:0 3px 14px rgba(26,127,168,.1)}
-.sw-card.sw-on{border-color:#1a7fa8;background:#f4fbff}
-.sw-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;margin-bottom:12px}
-.sw-ct{font-size:16px;font-weight:700;color:#1a2332;margin-bottom:5px}
-.sw-cd{font-size:12px;color:#6a7585;line-height:1.6}
-.sw-feats{margin-top:12px;display:flex;flex-direction:column;gap:4px}
-.sw-feat{display:flex;align-items:center;gap:6px;font-size:12px;color:#4a5568}
-.sw-dot{width:15px;height:15px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
-.sw-ft{margin-top:16px;padding-top:12px;border-top:1px solid #f0f0f0}
-.sw-btn{width:100%;height:36px;border-radius:7px;font-size:13px;font-weight:600;font-family:var(--f);cursor:pointer;border:none;transition:all .15s}
-.sw-btn.sw-p{background:#1a7fa8;color:#fff}.sw-btn.sw-p:hover{background:#155f80}
-.sw-btn.sw-s{background:#f0f4f8;color:#4a5568;border:1px solid #e2e6ed}
-.sw-pill{position:absolute;top:12px;right:12px;background:#1a7fa8;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px}
-
+/* ── PRODUCT SWITCHER DROPDOWN ── */
+#sw-dd{position:absolute;top:42px;right:0;z-index:2000;background:#fff;border:1px solid var(--p150);border-radius:10px;box-shadow:0 8px 24px rgba(30,26,23,.12);width:220px;overflow:hidden;opacity:0;transform:translateY(-6px);transition:opacity .15s,transform .15s;pointer-events:none}
+#sw-dd.open{opacity:1;transform:translateY(0);pointer-events:all}
+.sw-wrap{position:relative;display:inline-flex}
+.sw-opt{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:background .1s;font-size:13px;color:var(--g11)}
+.sw-opt:hover{background:var(--p25)}
+.sw-opt.sw-cur{background:var(--p50);pointer-events:none}
+.sw-opt-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sw-opt-name{flex:1;font-weight:500}
+.sw-opt-check{font-size:11px;color:var(--p);margin-left:auto}
+.sw-divider{height:1px;background:var(--p150);margin:2px 0}
+/* same for Boatyard */
+#by-sw-dd{position:absolute;top:42px;right:0;z-index:2000;background:#fff;border:1px solid #e2e6ed;border-radius:10px;box-shadow:0 8px 24px rgba(26,35,50,.12);width:220px;overflow:hidden;opacity:0;transform:translateY(-6px);transition:opacity .15s,transform .15s;pointer-events:none}
+#by-sw-dd.open{opacity:1;transform:translateY(0);pointer-events:all}
+.by-sw-wrap{position:relative;display:inline-flex}
+.by-sw-opt{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:background .1s;font-size:13px;color:#1a2332}
+.by-sw-opt:hover{background:#f4f6f9}
+.by-sw-opt.by-sw-cur{background:#e8f4f8;pointer-events:none}
 /* ── BOATYARD ── */
-.by-tnav{height:58px;background:#fff;border-bottom:1px solid #e2e6ed;display:flex;align-items:center;padding:0 18px;flex-shrink:0;z-index:40}
-.by-lm{width:34px;height:34px;background:#1a7fa8;border-radius:7px;display:flex;align-items:center;justify-content:center;margin-right:10px;flex-shrink:0}
-.by-lt{display:flex;flex-direction:column;line-height:1;margin-right:28px}
-.by-l1{font-size:12px;font-weight:700;color:#1a2332;letter-spacing:.5px}
-.by-l2{font-size:8px;font-weight:600;color:#8796a8;letter-spacing:1.2px;text-transform:uppercase}
-.by-tr{margin-left:auto;display:flex;align-items:center;gap:10px}
-.by-pp{height:32px;padding:0 11px;border:1px solid #e2e6ed;border-radius:7px;background:#fff;font-size:12px;font-weight:600;color:#4a5568;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:var(--f)}
-.by-bll{width:34px;height:34px;border-radius:7px;border:1px solid #e2e6ed;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
-.by-blb{position:absolute;top:-4px;right:-4px;background:#cc3333;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 2px}
-.by-avb{display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:7px;border:1px solid #e2e6ed;background:#fff;cursor:pointer}
-.by-av{width:26px;height:26px;border-radius:50%;background:#1a7fa8;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+/* Boatyard brand colors from reference: dark navy #1a2f45, teal #2d8fa5 */
+:root{--by-dark:#1a2f45;--by-teal:#2d8fa5;--by-mid:#4a6580;--by-light:#e8f2f7;--by-border:#dde5ec;}
+.by-tnav{height:60px;background:#fff;border-bottom:1px solid var(--by-border);display:flex;align-items:center;padding:0 20px;flex-shrink:0;z-index:40;gap:0}
+.by-lm{width:44px;height:44px;background:var(--by-teal);border-radius:50%;border:2.5px solid var(--by-dark);display:flex;align-items:center;justify-content:center;margin-right:12px;flex-shrink:0}
+.by-lt{display:flex;flex-direction:column;line-height:1.15;margin-right:32px}
+.by-l1{font-size:14px;font-weight:800;color:var(--by-dark);letter-spacing:.3px}
+.by-l2{font-size:8.5px;font-weight:600;color:var(--by-mid);letter-spacing:1.5px;text-transform:uppercase}
+.by-tr{margin-left:auto;display:flex;align-items:center;gap:12px}
+.by-pp{height:32px;padding:0 11px;border:1px solid var(--by-border);border-radius:7px;background:#fff;font-size:12px;font-weight:600;color:var(--by-mid);cursor:pointer;display:flex;align-items:center;gap:5px;font-family:var(--f)}
+.by-bll{width:36px;height:36px;border-radius:8px;border:1px solid var(--by-border);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.by-blb{position:absolute;top:-5px;right:-5px;background:#e53535;color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.by-avb{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:8px;border:1px solid var(--by-border);background:#fff;cursor:pointer}
+.by-av{width:28px;height:28px;border-radius:50%;background:var(--by-teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
 .by-body{display:flex;flex:1;overflow:hidden}
-.by-sb{width:205px;min-width:205px;background:#fff;border-right:1px solid #e2e6ed;display:flex;flex-direction:column;overflow-y:auto;padding:10px 0}
-.by-si{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:13px;color:#4a5568;transition:all .1s;margin:1px 7px;border-radius:7px}
-.by-si:hover{background:#f4f6f9;color:#1a2332}
-.by-si.on{background:#e8f4f8;color:#1a7fa8;font-weight:500}
-.by-su{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 33px;cursor:pointer;font-size:12.5px;color:#4a5568;margin:1px 7px;border-radius:7px;transition:all .1s}
-.by-su:hover{background:#f4f6f9;color:#1a2332}
-.by-su.on{background:#e8f4f8;color:#1a7fa8;font-weight:500}
+.by-sb{width:215px;min-width:215px;background:#fff;border-right:1px solid var(--by-border);display:flex;flex-direction:column;overflow-y:auto;padding:14px 0}
+.by-si{display:flex;align-items:center;gap:9px;padding:9px 14px;cursor:pointer;font-size:13.5px;color:var(--by-mid);transition:all .1s;margin:1px 8px;border-radius:7px;font-family:var(--f)}
+.by-si:hover{background:var(--by-light);color:var(--by-dark)}
+.by-si.on{background:var(--by-light);color:var(--by-teal);font-weight:500}
+.by-su{display:flex;align-items:center;gap:9px;padding:7px 14px 7px 33px;cursor:pointer;font-size:13px;color:var(--by-mid);margin:1px 8px;border-radius:7px;transition:all .1s;font-family:var(--f)}
+.by-su:hover{background:var(--by-light);color:var(--by-dark)}
+.by-su.on{background:var(--by-light);color:var(--by-teal);font-weight:500}
 .by-mn{flex:1;overflow-y:auto;display:flex;flex-direction:column}
 .by-pg{padding:22px 26px}
-.by-pt{font-size:24px;font-weight:700;color:#1a2332;line-height:1.2}
-.by-ps{font-size:13px;color:#4a5568;margin-top:4px;margin-bottom:20px}
+.by-pt{font-size:24px;font-weight:700;color:var(--by-dark);line-height:1.2}
+.by-ps{font-size:13px;color:var(--by-mid);margin-top:4px;margin-bottom:20px}
 .by-btn{height:34px;padding:0 15px;border-radius:6px;font-size:13px;font-family:var(--f);font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:all .12s;border:none}
-.by-bp{background:#1a7fa8;color:#fff}.by-bp:hover{background:#155f80}
-.by-bs{background:#fff;color:#4a5568;border:1px solid #e2e6ed}.by-bs:hover{border-color:#1a7fa8;color:#1a2332}
+.by-bp{background:var(--by-teal);color:#fff}.by-bp:hover{background:#155f80}
+.by-bs{background:#fff;color:var(--by-mid);border:1px solid var(--by-border)}.by-bs:hover{border-color:var(--by-teal);color:var(--by-dark)}
 .by-bsm{height:28px;padding:0 10px;font-size:12px}
-.by-card{background:#fff;border-radius:8px;border:1px solid #e2e6ed;box-shadow:0 1px 3px rgba(26,35,50,.07)}
+.by-card{background:#fff;border-radius:8px;border:1px solid var(--by-border);box-shadow:0 1px 3px rgba(26,35,50,.07)}
 .by-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
-.bta{background:#1a2332;color:#fff}.bto{background:#6b4fa0;color:#fff}
-.btm{background:#1a7fa8;color:#fff}.bte{background:#2d6a4f;color:#fff}
-.btv{background:#f4f6f9;color:#8796a8;border:1px solid #e2e6ed}
+.bta{background:var(--by-dark);color:#fff}.bto{background:#6b4fa0;color:#fff}
+.btm{background:var(--by-teal);color:#fff}.bte{background:#2d6a4f;color:#fff}
+.btv{background:var(--by-light);color:var(--by-mid);border:1px solid var(--by-border)}
 .btok{background:#e6f4ec;color:#1a8a4a}.btwn{background:#fef3e2;color:#b8740a}
-.btif{background:#e8f4f8;color:#1a7fa8}
+.btif{background:#e8f4f8;color:var(--by-teal)}
 .by-tbl{width:100%;border-collapse:collapse}
-.by-tbl thead tr{border-bottom:2px solid #e2e6ed}
-.by-tbl th{padding:9px 14px;font-size:10.5px;font-weight:600;color:#8796a8;text-align:left;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
-.by-tbl td{padding:12px 14px;font-size:13px;color:#4a5568;border-bottom:1px solid #edf0f5;vertical-align:middle}
+.by-tbl thead tr{border-bottom:2px solid var(--by-border)}
+.by-tbl th{padding:9px 14px;font-size:10.5px;font-weight:600;color:var(--by-mid);text-align:left;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
+.by-tbl td{padding:12px 14px;font-size:13px;color:var(--by-mid);border-bottom:1px solid var(--by-border);vertical-align:middle}
 .by-tbl tr:last-child td{border-bottom:none}
-.by-tbl tbody tr:hover td{background:#f7f9fc}
-.by-av2{width:24px;height:24px;border-radius:50%;background:#1a7fa8;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.by-tbl tbody tr:hover td{background:var(--by-light)}
+.by-av2{width:24px;height:24px;border-radius:50%;background:var(--by-teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
 .by-tgl{width:38px;height:20px;border-radius:999px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
-.by-tgl.on{background:#1a7fa8}.by-tgl.off{background:#d1d9e0}
+.by-tgl.on{background:var(--by-teal)}.by-tgl.off{background:#d1d9e0}
 .by-tgl::after{content:'';width:14px;height:14px;background:#fff;border-radius:50%;position:absolute;top:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .by-tgl.on::after{left:21px}.by-tgl.off::after{left:3px}
 .by-ni{padding:10px 13px;border-radius:7px;font-size:13px;display:flex;gap:9px;align-items:flex-start;border:1px solid;line-height:1.5;margin-bottom:14px}
 .by-ni-i{background:#e8f4f8;border-color:#b3d9e8;color:#1a4d6b}
-.by-kpi{background:#fff;border:1px solid #e2e6ed;border-radius:8px;padding:14px 18px}
-.by-kv{font-size:26px;font-weight:800;color:#1a2332;line-height:1}
-.by-kl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#8796a8;margin-top:4px}
+.by-kpi{background:#fff;border:1px solid var(--by-border);border-radius:8px;padding:14px 18px}
+.by-kv{font-size:26px;font-weight:800;color:var(--by-dark);line-height:1}
+.by-kl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--by-mid);margin-top:4px}
 /* modal for by */
 .by-md{background:#fff;border-radius:10px;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 16px 56px rgba(26,35,50,.18);font-family:var(--f)}
-.by-mhd{padding:16px 20px;border-bottom:1px solid #e2e6ed;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:5}
-.by-mt{font-size:15px;font-weight:700;color:#1a2332}
-.by-mx{background:none;border:none;cursor:pointer;color:#8796a8;font-size:17px;padding:3px;line-height:1}
+.by-mhd{padding:16px 20px;border-bottom:1px solid var(--by-border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:5}
+.by-mt{font-size:15px;font-weight:700;color:var(--by-dark)}
+.by-mx{background:none;border:none;cursor:pointer;color:var(--by-mid);font-size:17px;padding:3px;line-height:1}
 .by-mb{padding:20px}
-.by-mft{padding:12px 20px;border-top:1px solid #e2e6ed;display:flex;align-items:center;justify-content:space-between;gap:8px;position:sticky;bottom:0;background:#fff}
+.by-mft{padding:12px 20px;border-top:1px solid var(--by-border);display:flex;align-items:center;justify-content:space-between;gap:8px;position:sticky;bottom:0;background:#fff}
 </style>
 </head>
 <body>
@@ -287,10 +283,25 @@ textarea.inp{height:auto;min-height:72px;padding:9px 11px;resize:vertical}
     <div id="tb">
       <div class="tb-bc" id="bc"><span class="tb-pg" id="tb-pg"></span></div>
       <div class="tb-r">
-        <button class="prod-pill" onclick="swOpen()">
-          <span style="width:7px;height:7px;border-radius:50%;background:var(--p);display:inline-block"></span>
-          YachtIQ <span style="font-size:9px;opacity:.5">▾</span>
-        </button>
+        <div class="sw-wrap" id="yiq-sw-wrap">
+          <button class="prod-pill" onclick="swToggle(event)" id="yiq-sw-btn">
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--p);display:inline-block"></span>
+            YachtIQ <span style="font-size:9px;opacity:.5">▾</span>
+          </button>
+          <div id="sw-dd">
+            <div style="padding:8px 14px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g75)">Switch to</div>
+            <div class="sw-opt sw-cur" onclick="swPick('yiq');swClose()">
+              <span class="sw-opt-dot" style="background:var(--p)"></span>
+              <span class="sw-opt-name">YachtIQ</span>
+              <span class="sw-opt-check">✓</span>
+            </div>
+            <div class="sw-divider"></div>
+            <div class="sw-opt" onclick="swPick('by');swClose()">
+              <span class="sw-opt-dot" style="background:#1a7fa8"></span>
+              <span class="sw-opt-name">Boatyard Sales</span>
+            </div>
+          </div>
+        </div>
         <div class="row gap8">
           <div class="av">JS</div>
           <span class="un">James Smith</span>
@@ -306,16 +317,35 @@ textarea.inp{height:auto;min-height:72px;padding:9px 11px;resize:vertical}
 <div id="by" class="hidden">
   <div class="by-tnav">
     <div class="by-lm">
-      <svg width="19" height="19" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 20 20">
-        <path d="M3 14 C6 9 9 7 10 6.5 C11 7 14 9 17 14"/><line x1="10" y1="6.5" x2="10" y2="3"/><line x1="2" y1="16" x2="18" y2="16"/>
+      <!-- Boatyard "B" flag badge matching reference -->
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <!-- Flag pole -->
+        <line x1="7" y1="4" x2="7" y2="18" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+        <!-- Flag shape -->
+        <path d="M7 4 L16 7 L7 10 Z" fill="white"/>
       </svg>
     </div>
     <div class="by-lt"><span class="by-l1">BOATYARD</span><span class="by-l2">SALES</span></div>
     <div class="by-tr">
-      <button class="by-pp" onclick="swOpen()">
-        <span style="width:7px;height:7px;border-radius:50%;background:#1a7fa8;display:inline-block"></span>
-        Boatyard Sales <span style="font-size:9px;opacity:.5">▾</span>
-      </button>
+      <div class="by-sw-wrap" id="by-sw-wrap">
+        <button class="by-pp" onclick="bySwToggle(event)" id="by-sw-btn">
+          <span style="width:7px;height:7px;border-radius:50%;background:#1a7fa8;display:inline-block"></span>
+          Boatyard Sales <span style="font-size:9px;opacity:.5">▾</span>
+        </button>
+        <div id="by-sw-dd">
+          <div style="padding:8px 14px 5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#8796a8">Switch to</div>
+          <div class="by-sw-opt" onclick="swPick('yiq');bySwClose()">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--p);flex-shrink:0"></span>
+            <span style="flex:1;font-weight:500">YachtIQ</span>
+          </div>
+          <div style="height:1px;background:#e2e6ed;margin:2px 0"></div>
+          <div class="by-sw-opt by-sw-cur" onclick="swPick('by');bySwClose()">
+            <span style="width:8px;height:8px;border-radius:50%;background:#1a7fa8;flex-shrink:0"></span>
+            <span style="flex:1;font-weight:500">Boatyard Sales</span>
+            <span style="font-size:11px;color:#1a7fa8">✓</span>
+          </div>
+        </div>
+      </div>
       <div class="by-bll">
         <svg width="15" height="15" fill="none" stroke="#4a5568" stroke-width="1.5" stroke-linecap="round" viewBox="0 0 18 18"><path d="M9 2C9 2 5 5 5 10v2H13v-2C13 5 9 2 9 2z"/><line x1="7" y1="14" x2="11" y2="14"/><line x1="8" y1="16" x2="10" y2="16"/></svg>
         <div class="by-blb">14</div>
@@ -339,46 +369,6 @@ textarea.inp{height:auto;min-height:72px;padding:9px 11px;resize:vertical}
 <div id="m-role" class="ov hidden" onclick="if(event.target===this)closeModal('m-role')"></div>
 <div id="m-byinv" class="ov hidden" onclick="if(event.target===this)closeModal('m-byinv')"></div>
 
-<!-- SWITCHER -->
-<div id="sw-ov" class="hidden" onclick="if(event.target===this)swClose()">
-  <div class="sw-md">
-    <div class="sw-hd">
-      <div class="sw-t">Switch Product</div>
-      <div class="sw-s">You're signed in to both platforms</div>
-      <button class="sw-x" onclick="swClose()">✕</button>
-    </div>
-    <div class="sw-bd">
-      <div class="sw-card" id="sw-yiq" onclick="swPick('yiq')">
-        <div class="sw-badge" style="background:#f5f0ec;color:#88735E">
-          <span style="width:7px;height:7px;border-radius:50%;background:#88735E;display:inline-block"></span> YachtIQ
-        </div>
-        <div class="sw-ct">YachtIQ</div>
-        <div class="sw-cd">Enterprise yacht charter &amp; sales with advanced RBAC, multi-brand scoping, and field-level permissions.</div>
-        <div class="sw-feats">
-          <div class="sw-feat"><div class="sw-dot" style="background:#f0f9f4;color:#2b9667">✓</div>Entity-level permissions</div>
-          <div class="sw-feat"><div class="sw-dot" style="background:#f0f9f4;color:#2b9667">✓</div>Data scope per action</div>
-          <div class="sw-feat"><div class="sw-dot" style="background:#f0f9f4;color:#2b9667">✓</div>Field visibility control</div>
-          <div class="sw-feat"><div class="sw-dot" style="background:#f0f9f4;color:#2b9667">✓</div>Multi-brand isolation</div>
-        </div>
-        <div class="sw-ft"><button class="sw-btn" id="sw-yiq-btn" onclick="event.stopPropagation();swPick('yiq');swClose()">Switch to YachtIQ →</button></div>
-      </div>
-      <div class="sw-card" id="sw-by" onclick="swPick('by')">
-        <div class="sw-badge" style="background:#e8f4f8;color:#1a7fa8">
-          <span style="width:7px;height:7px;border-radius:50%;background:#1a7fa8;display:inline-block"></span> Boatyard Sales
-        </div>
-        <div class="sw-ct">Boatyard Sales</div>
-        <div class="sw-cd">Multi-tenant boat dealership platform with streamlined feature-based access management per dealership.</div>
-        <div class="sw-feats">
-          <div class="sw-feat"><div class="sw-dot" style="background:#e8f4f8;color:#1a7fa8">✓</div>Feature-toggle permissions</div>
-          <div class="sw-feat"><div class="sw-dot" style="background:#e8f4f8;color:#1a7fa8">✓</div>Multi-tenant isolation</div>
-          <div class="sw-feat"><div class="sw-dot" style="background:#e8f4f8;color:#1a7fa8">✓</div>Inventory &amp; sales tools</div>
-          <div class="sw-feat"><div class="sw-dot" style="background:#e8f4f8;color:#1a7fa8">✓</div>Marketplace publishing</div>
-        </div>
-        <div class="sw-ft"><button class="sw-btn" id="sw-by-btn" onclick="event.stopPropagation();swPick('by');swClose()">Switch to Boatyard Sales →</button></div>
-      </div>
-    </div>
-  </div>
-</div>
 <script>
 /* ════ DATA ════ */
 const BRANDS=["Fraser Yachts","Burgess Yachts","OceanCo","Northrop & Johnson","Y.CO","Camper & Nicholsons"];
@@ -627,30 +617,51 @@ function sbToggle(){
   renderNav();
 }
 
-/* ════ PRODUCT SWITCH ════ */
-function swOpen(){document.getElementById('sw-ov').classList.remove('hidden');updateSwUI();}
-function swClose(){document.getElementById('sw-ov').classList.add('hidden');}
+/* ════ PRODUCT SWITCH — dropdown ════ */
+function swToggle(e){
+  e.stopPropagation();
+  const dd=document.getElementById('sw-dd');
+  dd.classList.toggle('open');
+}
+function swClose(){
+  const dd=document.getElementById('sw-dd');
+  if(dd) dd.classList.remove('open');
+}
+function bySwToggle(e){
+  e.stopPropagation();
+  const dd=document.getElementById('by-sw-dd');
+  dd.classList.toggle('open');
+}
+function bySwClose(){
+  const dd=document.getElementById('by-sw-dd');
+  if(dd) dd.classList.remove('open');
+}
 function swPick(p){
   S.prod=p;
   document.getElementById('yiq').classList.toggle('hidden',p!=='yiq');
   document.getElementById('by').classList.toggle('hidden',p!=='by');
-  updateSwUI();
+  swClose(); bySwClose();
   if(p==='by'){renderBySB();renderByPage();}
+  updateSwLabels();
 }
-function updateSwUI(){
-  ['yiq','by'].forEach(p=>{
-    const card=document.getElementById('sw-'+p);
-    const btn=document.getElementById('sw-'+p+'-btn');
-    if(!card||!btn) return;
-    const on=S.prod===p;
-    card.classList.toggle('sw-on',on);
-    let pill=card.querySelector('.sw-pill');
-    if(on&&!pill) card.insertAdjacentHTML('beforeend','<div class="sw-pill">Active</div>');
-    else if(!on&&pill) pill.remove();
-    btn.className='sw-btn '+(on?'sw-s':'sw-p');
-    btn.textContent=on?'Currently active':(p==='yiq'?'Switch to YachtIQ →':'Switch to Boatyard Sales →');
+function updateSwLabels(){
+  // Update the check marks / current indicators in both dropdowns
+  const yiqDD=document.getElementById('sw-dd');
+  const byDD=document.getElementById('by-sw-dd');
+  if(!yiqDD||!byDD) return;
+  // YIQ dropdown: first option = yiq, second = by
+  const opts=yiqDD.querySelectorAll('.sw-opt');
+  opts.forEach((o,i)=>{
+    const isP=(i===0&&S.prod==='yiq')||(i===1&&S.prod==='by');
+    o.classList.toggle('sw-cur',isP);
+    const chk=o.querySelector('.sw-opt-check');
+    if(isP&&!chk) o.insertAdjacentHTML('beforeend','<span class="sw-opt-check">✓</span>');
+    else if(!isP&&chk) chk.remove();
   });
 }
+// Close dropdowns on outside click
+document.addEventListener('click',function(){swClose();bySwClose();});
+
 
 /* ════ YIQ PAGES ════ */
 function renderPage(){
@@ -1291,13 +1302,20 @@ function byIco(n,sz=16,c='#8796a8'){
   const s=`width:${sz}px;height:${sz}px;display:block;flex-shrink:0`;
   const p=`fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"`;
   const I={
-    db:`<svg style="${s}" viewBox="0 0 18 18" ${p}><rect x="2" y="2" width="6" height="6" rx="1.5"/><rect x="10" y="2" width="6" height="6" rx="1.5"/><rect x="2" y="10" width="6" height="6" rx="1.5"/><rect x="10" y="10" width="6" height="6" rx="1.5"/></svg>`,
-    inv:`<svg style="${s}" viewBox="0 0 18 18" ${p}><path d="M2 5L9 2l7 3v8l-7 3-7-3z"/><line x1="9" y1="2" x2="9" y2="16"/><line x1="2" y1="5" x2="16" y2="5"/></svg>`,
-    sl:`<svg style="${s}" viewBox="0 0 18 18" ${p}><polyline points="2,13 6,8 10,10 16,4"/><line x1="12" y1="4" x2="16" y2="4"/><line x1="16" y1="4" x2="16" y2="8"/></svg>`,
-    rp:`<svg style="${s}" viewBox="0 0 18 18" ${p}><rect x="2.5" y="10" width="3" height="5.5" rx=".5"/><rect x="7.5" y="6.5" width="3" height="9" rx=".5"/><rect x="12.5" y="3" width="3" height="12.5" rx=".5"/></svg>`,
-    co:`<svg style="${s}" viewBox="0 0 18 18" ${p}><rect x="2" y="3" width="14" height="12" rx="1.5"/><line x1="2" y1="7" x2="16" y2="7"/><line x1="6" y1="7" x2="6" y2="15"/></svg>`,
-    cm:`<svg style="${s}" viewBox="0 0 18 18" ${p}><rect x="3" y="7" width="12" height="9" rx="1"/><path d="M6 7V5A3 3 0 0 1 12 5v2"/><line x1="9" y1="10" x2="9" y2="13"/><line x1="7.5" y1="11.5" x2="10.5" y2="11.5"/></svg>`,
-    dc:`<svg style="${s}" viewBox="0 0 18 18" ${p}><path d="M11 2H5A1.5 1.5 0 0 0 3.5 3.5v11A1.5 1.5 0 0 0 5 16h8a1.5 1.5 0 0 0 1.5-1.5V5.5L11 2z"/><polyline points="11,2 11,5.5 14.5,5.5"/><line x1="6.5" y1="9" x2="11.5" y2="9"/><line x1="6.5" y1="12" x2="9.5" y2="12"/></svg>`,
+    // Dashboard — speedometer/gauge (matches reference)
+    db:`<svg style="${s}" viewBox="0 0 18 18" ${p}><path d="M3 13.5A7 7 0 1 1 15 13.5"/><path d="M9 9l-3-3" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="9" r="1.2" fill="${c}" stroke="none"/><line x1="4.5" y1="7" x2="5.3" y2="8" stroke-width="1.2"/><line x1="13.5" y1="7" x2="12.7" y2="8" stroke-width="1.2"/><line x1="3.5" y1="12" x2="4.5" y2="11.5" stroke-width="1.2"/></svg>`,
+    // Inventory — boat/vessel silhouette (matches reference boat icon)
+    inv:`<svg style="${s}" viewBox="0 0 18 18" ${p}><path d="M2 11.5C5 7 7.5 5 9 4.5 10.5 5 13 7 16 11.5"/><line x1="9" y1="4.5" x2="9" y2="2"/><path d="M1 14h16"/><path d="M3.5 14l1 2.5h9l1-2.5"/><path d="M6 9.5h6"/></svg>`,
+    // Sales — anchor (matches reference anchor icon)
+    sl:`<svg style="${s}" viewBox="0 0 18 18" ${p}><circle cx="9" cy="5" r="2"/><line x1="9" y1="7" x2="9" y2="16"/><path d="M5.5 9.5H3.5C3.5 13.5 6 15.5 9 16 12 15.5 14.5 13.5 14.5 9.5H12.5"/><line x1="6" y1="5" x2="12" y2="5"/></svg>`,
+    // Reports — line chart with upward trend
+    rp:`<svg style="${s}" viewBox="0 0 18 18" ${p}><polyline points="2,14 6,9 10,11 15,4"/><line x1="2" y1="16" x2="16" y2="16"/><line x1="2" y1="4" x2="2" y2="16"/></svg>`,
+    // Costing — credit card / wallet
+    co:`<svg style="${s}" viewBox="0 0 18 18" ${p}><rect x="1.5" y="4" width="15" height="10" rx="1.5"/><line x1="1.5" y1="8" x2="16.5" y2="8"/><line x1="4" y1="11.5" x2="7" y2="11.5"/><line x1="9" y1="11.5" x2="10.5" y2="11.5"/></svg>`,
+    // Companies — life ring / buoy (matches reference lifering icon)
+    cm:`<svg style="${s}" viewBox="0 0 18 18" ${p}><circle cx="9" cy="9" r="7"/><circle cx="9" cy="9" r="3.5"/><line x1="6.5" y1="6.5" x2="4.5" y2="4.5"/><line x1="11.5" y1="6.5" x2="13.5" y2="4.5"/><line x1="6.5" y1="11.5" x2="4.5" y2="13.5"/><line x1="11.5" y1="11.5" x2="13.5" y2="13.5"/></svg>`,
+    // Documents — page with lines (matches reference doc icon)
+    dc:`<svg style="${s}" viewBox="0 0 18 18" ${p}><path d="M11.5 2H4.5A1.5 1.5 0 0 0 3 3.5v11A1.5 1.5 0 0 0 4.5 16h9a1.5 1.5 0 0 0 1.5-1.5V5.5z"/><polyline points="11.5,2 11.5,5.5 15,5.5"/><line x1="6" y1="9" x2="12" y2="9"/><line x1="6" y1="12" x2="10" y2="12"/></svg>`,
     us:`<svg style="${s}" viewBox="0 0 18 18" ${p}><circle cx="7" cy="6" r="2.8"/><path d="M1.5 16C1.5 12.5 4 10 7 10s5.5 2.5 5.5 6"/><path d="M12 7.5C13.2 7.5 14.5 8.5 14.5 10.5"/><path d="M13 16H16.5"/></svg>`,
     rl:`<svg style="${s}" viewBox="0 0 18 18" ${p}><rect x="3" y="8" width="12" height="8" rx="1.5"/><path d="M6 8V5.5A3 3 0 0 1 12 5.5V8"/><circle cx="9" cy="12" r="1.2" fill="${c}" stroke="none"/></svg>`,
     iv:`<svg style="${s}" viewBox="0 0 18 18" ${p}><rect x="2" y="4.5" width="14" height="9" rx="1.5"/><polyline points="2,5.5 9,10 16,5.5"/><line x1="13" y1="11" x2="16" y2="11"/><line x1="14.5" y1="9.5" x2="14.5" y2="12.5"/></svg>`,
@@ -1310,20 +1328,39 @@ function renderBySB(){
   let h='';
   BY_NAV.forEach(it=>{
     const on=S.byPage===it.id||S.byPage.startsWith(it.id+'-');
-    const c=on?'#1a7fa8':'#8796a8';
+    const grpOpen=S.byGrp===it.id;
+    const ic=on?'var(--by-teal)':'var(--by-mid)';
     h+=`<div class="by-si${on?' on':''}" onclick="${it.subs.length?`S.byGrp=S.byGrp==='${it.id}'?null:'${it.id}';renderBySB()`:`byNav('${it.id}')`}">
-      ${byIco(it.ic,16,c)}<span style="flex:1">${it.lb}</span>
-      ${it.subs.length?`<span style="font-size:10px;color:#8796a8;transform:${S.byGrp===it.id?'rotate(180deg)':'rotate(0)'};transition:transform .2s;display:inline-block">▾</span>`:''}
+      ${byIco(it.ic,17,ic)}<span style="flex:1">${it.lb}</span>
+      ${it.subs.length?`<svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="${ic}" stroke-width="1.6" stroke-linecap="round" style="flex-shrink:0;transition:transform .2s;transform:${grpOpen?'rotate(180deg)':'rotate(0)'}"><polyline points="2.5,4.5 6.5,8.5 10.5,4.5"/></svg>`:''}
     </div>`;
-    if(it.subs.length&&S.byGrp===it.id) it.subs.forEach(s=>{
-      h+=`<div class="by-su${S.byPage===s.id?' on':''}" onclick="byNav('${s.id}')">${s.lb}</div>`;
-    });
+    if(it.subs.length&&grpOpen){
+      // vertical line container matching reference screenshot
+      h+=`<div style="margin:2px 0 4px;padding-left:22px;border-left:none">`;
+      // The reference shows a vertical line on the left of sub-items
+      h+=`<div style="margin-left:14px;border-left:2px solid var(--by-border);padding-left:0">`;
+      it.subs.forEach(s=>{
+        const son=S.byPage===s.id;
+        h+=`<div class="by-su${son?' on':''}" onclick="byNav('${s.id}')" style="margin:0 8px 0 0;padding-left:${son?'10':'12'}px;${son?'border-left:2px solid var(--by-teal);margin-left:-2px':''}">
+          <span>${s.lb}</span>
+        </div>`;
+      });
+      h+=`</div></div>`;
+    }
   });
-  h+='<div style="height:1px;background:#e2e6ed;margin:9px 13px"></div>';
+  // Settings divider
+  h+=`<div style="height:1px;background:var(--by-border);margin:10px 14px"></div>`;
   BY_SETT.forEach(it=>{
-    const on=S.byPage===it.id; const c=on?'#1a7fa8':'#8796a8';
-    h+=`<div class="by-si${on?' on':''}" onclick="byNav('${it.id}')">${byIco(it.ic,16,c)}<span>${it.lb}</span></div>`;
+    const on=S.byPage===it.id; const ic=on?'var(--by-teal)':'var(--by-mid)';
+    h+=`<div class="by-si${on?' on':''}" onclick="byNav('${it.id}')">${byIco(it.ic,17,ic)}<span>${it.lb}</span></div>`;
   });
+  // Collapse button at bottom matching reference
+  h+=`<div style="flex:1"></div>
+  <div style="padding:10px 12px">
+    <button onclick="" style="width:40px;height:40px;background:#fff;border:1px solid var(--by-border);border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--by-mid)" stroke-width="1.5" stroke-linecap="round"><polyline points="10,4 6,8 10,12"/></svg>
+    </button>
+  </div>`;
   sb.innerHTML=h;
 }
 function byNav(id){S.byPage=id;renderBySB();renderByPage();}
@@ -1331,8 +1368,9 @@ function renderByPage(){
   const el=document.getElementById('by-pc'); if(!el) return;
   const pages={
     'by-models':byModels,'by-users':byUsers,'by-roles':byRoles,
+    'by-invites':byInvites,'by-settings':bySettings,
   };
-  el.innerHTML=(pages[S.byPage]||(()=>`<div class="by-pg"><div class="by-pt">${S.byPage.replace('by-','').charAt(0).toUpperCase()+S.byPage.replace('by-','').slice(1)}</div></div>`))();
+  el.innerHTML=(pages[S.byPage]||(()=>''))();
 }
 function byModels(){
   const boats=[
@@ -1464,7 +1502,118 @@ function byRoles(){
     </div>
   </div>`;
 }
+function byInvites(){
+  const pending=[
+    {name:"Diego Fuentes",   email:"d.fuentes@bluewave.com",  role:"Manager",cls:"btm",tenant:"BlueWave Boats",  sent:"1d ago",exp:"2d left"},
+    {name:"Tanya Kowalski",  email:"t.kowalski@seaquest.com", role:"Editor", cls:"bte",tenant:"SeaQuest Marine", sent:"3d ago",exp:"0d left"},
+    {name:"James Wu",        email:"j.wu@marinepeak.com",     role:"Viewer", cls:"btv",tenant:"Marine Peak",     sent:"5d ago",exp:"Expired"},
+  ];
+  const rows=pending.map(p=>`<tr>
+    <td><div style="font-weight:500;color:var(--by-dark)">${p.name}</div><div style="font-size:11px;color:var(--by-mid)">${p.email}</div></td>
+    <td><span class="by-tag ${p.cls}">${p.role}</span></td>
+    <td style="font-size:13px;color:var(--by-mid)">${p.tenant}</td>
+    <td style="font-size:12px;color:var(--by-mid)">${p.sent}</td>
+    <td><span class="by-tag ${p.exp==='Expired'?'btwn':'btok'}">${p.exp}</span></td>
+    <td><div style="display:flex;gap:6px">
+      <button class="by-btn by-bs by-bsm" ${p.exp==='Expired'?'':''}>${p.exp==='Expired'?'Re-send':'Resend'}</button>
+      <button class="by-btn by-bsm" style="background:#fff;color:#cc3333;border:1px solid #cc3333">Revoke</button>
+    </div></td>
+  </tr>`).join('');
+  return `<div class="by-pg">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div><div class="by-pt">Pending Invites</div><div class="by-ps">Invitations sent but not yet accepted</div></div>
+      <button class="by-btn by-bp" onclick="openByInvite()">+ Invite User</button>
+    </div>
+    <div class="by-ni by-ni-i" style="margin-bottom:16px">
+      <svg width="14" height="14" fill="none" stroke="#1a4d6b" stroke-width="1.5" stroke-linecap="round" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7"/><line x1="9" y1="8" x2="9" y2="13"/><circle cx="9" cy="5.5" r=".8" fill="#1a4d6b" stroke="none"/></svg>
+      <span>Invitation links expire after 72 hours. Re-send to generate a fresh link.</span>
+    </div>
+    <div class="by-card"><div style="overflow-x:auto">
+      <table class="by-tbl">
+        <thead><tr><th>Invitee</th><th>Role</th><th>Tenant</th><th>Sent</th><th>Expires</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>
+  </div>`;
+}
+
+function bySettings(){
+  return `<div class="by-pg">
+    <div style="margin-bottom:24px"><div class="by-pt">Account Settings</div><div class="by-ps">Configure your dealership profile, integrations, and preferences</div></div>
+
+    <!-- Dealership Profile -->
+    <div class="by-card" style="margin-bottom:16px;padding:0;overflow:hidden">
+      <div style="padding:13px 18px;border-bottom:1px solid var(--by-border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:14px;font-weight:600;color:var(--by-dark)">Dealership Profile</div>
+        <button class="by-btn by-bs by-bsm">Edit</button>
+      </div>
+      <div style="padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        ${[['Dealership Name','BlueWave Boats'],['Country','United States'],['Phone','+1 (555) 234-5678'],['Website','bluewaveboats.com'],['Address','1240 Marina Blvd, Miami, FL'],['Time Zone','Eastern Time (UTC-5)']].map(([l,v])=>`
+          <div>
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--by-mid);margin-bottom:4px">${l}</div>
+            <div style="font-size:13.5px;color:var(--by-dark)">${v}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Marketplace Integrations -->
+    <div class="by-card" style="margin-bottom:16px;padding:0;overflow:hidden">
+      <div style="padding:13px 18px;border-bottom:1px solid var(--by-border)">
+        <div style="font-size:14px;font-weight:600;color:var(--by-dark)">Marketplace Integrations</div>
+        <div style="font-size:12px;color:var(--by-mid);margin-top:2px">Manage where your listings are published</div>
+      </div>
+      <div style="padding:4px 0">
+        ${[
+          {name:'Boat Trader',    status:'connected',  listings:47,color:'btok'},
+          {name:'Boats.com',      status:'connected',  listings:47,color:'btok'},
+          {name:'YachtWorld',     status:'disconnected',listings:0, color:'btwn'},
+          {name:'BoatCrazy',      status:'connected',  listings:12,color:'btok'},
+        ].map(m=>`<div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--by-border)">
+          <div style="width:36px;height:36px;border-radius:8px;background:var(--by-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:var(--by-teal)">${m.name.charAt(0)}</div>
+          <div style="flex:1"><div style="font-size:13.5px;font-weight:500;color:var(--by-dark)">${m.name}</div>
+          <div style="font-size:11px;color:var(--by-mid);margin-top:1px">${m.status==='connected'?`${m.listings} listings synced`:'Not connected'}</div></div>
+          <span class="by-tag ${m.color}">${m.status}</span>
+          <button class="by-btn by-bs by-bsm">${m.status==='connected'?'Configure':'Connect'}</button>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Notification Preferences -->
+    <div class="by-card" style="margin-bottom:16px;padding:0;overflow:hidden">
+      <div style="padding:13px 18px;border-bottom:1px solid var(--by-border)">
+        <div style="font-size:14px;font-weight:600;color:var(--by-dark)">Notification Preferences</div>
+      </div>
+      <div style="padding:4px 18px">
+        ${[
+          ['New inquiry received','Email · In-app',true],
+          ['Listing published to marketplace','Email',true],
+          ['User invited to account','Email · In-app',true],
+          ['Weekly inventory report','Email',false],
+          ['Price change alerts','In-app',true],
+        ].map(([l,sub,on])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--by-border)">
+          <div><div style="font-size:13.5px;color:var(--by-dark)">${l}</div>
+          <div style="font-size:11px;color:var(--by-mid);margin-top:2px">${sub}</div></div>
+          <button class="by-tgl ${on?'on':'off'}" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="by-card" style="padding:0;overflow:hidden;border-color:#fecaca">
+      <div style="padding:13px 18px;border-bottom:1px solid #fecaca;background:#fff5f5">
+        <div style="font-size:14px;font-weight:600;color:#c53030">Danger Zone</div>
+      </div>
+      <div style="padding:16px 18px;display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:13.5px;color:var(--by-dark);font-weight:500">Delete Account</div>
+        <div style="font-size:12px;color:var(--by-mid);margin-top:2px">Permanently remove this dealership and all data. This cannot be undone.</div></div>
+        <button class="by-btn" style="background:#fff;color:#cc3333;border:1px solid #cc3333;flex-shrink:0">Delete Account</button>
+      </div>
+    </div>
+  </div>`;
+}
+
 function openByInvite(){S.byInvStep=0;renderByInvite();document.getElementById('m-byinv').classList.remove('hidden');}
+
 function renderByInvite(){
   const st=S.byInvStep; const steps=['Identity','Role & Access','Review'];
   const dots=steps.map((s,i)=>`<div style="display:flex;align-items:center">${i>0?`<div style="flex:1;max-width:26px;height:1px;background:${i<=st?'#1a8a4a':'#e2e6ed'};margin:0 6px"></div>`:''}<div style="display:flex;align-items:center">
