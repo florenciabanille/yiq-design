@@ -264,6 +264,9 @@ textarea.inp{height:auto;min-height:72px;padding:9px 11px;resize:vertical}
 .by-mx{background:none;border:none;cursor:pointer;color:var(--by-mid);font-size:17px;padding:3px;line-height:1}
 .by-mb{padding:20px}
 .by-mft{padding:12px 20px;border-top:1px solid var(--by-border);display:flex;align-items:center;justify-content:space-between;gap:8px;position:sticky;bottom:0;background:#fff}
+/* ── ROLE DETAIL + COMPARE PANEL ── */
+.access-bar{height:5px;border-radius:999px;background:var(--p100);overflow:hidden}
+.access-bar-fill{height:100%;background:var(--green);border-radius:999px;transition:width .3s}
 </style>
 </head>
 <body>
@@ -372,6 +375,27 @@ textarea.inp{height:auto;min-height:72px;padding:9px 11px;resize:vertical}
 <script>
 /* ════ DATA ════ */
 const BRANDS=["Fraser Yachts","Burgess Yachts","OceanCo","Northrop & Johnson","Y.CO","Camper & Nicholsons"];
+
+// Scope definitions — not managed by admin, assigned to users
+const SCOPES_DEF={
+  authored:    {lb:"Authored Only",   cls:"sc-au", short:"Authored",
+    desc:"Can access only records this user personally created or was assigned to.",
+    can:["Records I created","Listings I authored","Notes I wrote"],
+    cannot:["Other brokers' listings","Team-wide records","Cross-brand data"]},
+  brand:       {lb:"Brand-Scoped",    cls:"sc-br", short:"Brand",
+    desc:"Can access all records within their assigned brokerage.",
+    can:["All listings in assigned brand","All brand notes & shows","Brand sales history"],
+    cannot:["Other brokerages' data","Cross-brand reports","Global settings"]},
+  "cross-brand":{lb:"Cross-Brand",   cls:"sc-xb", short:"Cross-Brand",
+    desc:"Can access records across a defined set of assigned brands.",
+    can:["All records in assigned brands","Cross-brand analytics","Multi-brand reports"],
+    cannot:["Brands not in their assignment","System-wide settings","Other brands' sensitive data"]},
+  all:         {lb:"All Data",        cls:"sc-al", short:"Global",
+    desc:"No brand boundaries — can access all records across the entire platform.",
+    can:["All brokerages' data","All listings & notes","System settings & audit logs"],
+    cannot:[]},
+};
+const SCOPE_IDS=["authored","brand","cross-brand","all"];
 const USERS=[
   {id:1,name:"Penelope Cruz",    email:"p.cruz@frasergroup.com",      av:"PC",role:"Broker",        scope:"brand",      brand:"Fraser Yachts",  status:"active", last:"2h ago"},
   {id:2,name:"Ricardo Montalban",email:"r.montalban@yiq.com",         av:"RM",role:"Admin",          scope:"all",        brand:"All Brands",     status:"active", last:"1d ago"},
@@ -439,23 +463,31 @@ const BY_ROLES=[
   {id:"viewer", name:"Viewer", cls:"btv",users:54,desc:"Read-only access to inventory and reports."},
 ];
 const BY_FEATS=[
-  {id:"inventory",  label:"Inventory Management",desc:"View, add, edit and manage boat models, engines, trailers",    g:"Core"},
-  {id:"pricing",    label:"Pricing & Costing",   desc:"Set and adjust prices, cost sheets, margin controls",          g:"Core"},
-  {id:"sales",      label:"Sales Pipeline",      desc:"Leads, quotes, deals, and sales funnel management",            g:"Core"},
-  {id:"documents",  label:"Documents",           desc:"Upload, manage and share contracts, brochures, specs",         g:"Core"},
-  {id:"reports",    label:"Reports & Analytics", desc:"Revenue reports, inventory turnover, pipeline analytics",      g:"Insights"},
-  {id:"companies",  label:"Companies & Contacts",desc:"CRM: dealers, customers, suppliers, manufacturer contacts",    g:"CRM"},
-  {id:"marketplace",label:"Marketplace Publish", desc:"Publish listings to external marketplaces and portals",        g:"Publishing"},
-  {id:"billing",    label:"Billing & Invoicing", desc:"Invoices, payments, subscriptions. Admin and Owner only.",     g:"Finance"},
-  {id:"users",      label:"User Management",     desc:"Invite, edit roles, remove team members",                     g:"Admin"},
-  {id:"settings",   label:"Account Settings",    desc:"Branding, integrations, API keys, tenant configuration",      g:"Admin"},
+  // Core
+  {id:"inventory",  label:"Inventory Management",  desc:"Boats, engines, trailers and all inventory records",             g:"Core"},
+  {id:"pricing",    label:"Pricing & Costing",      desc:"Pricing, cost sheets and margin data",                           g:"Core"},
+  {id:"sales",      label:"Sales Pipeline",         desc:"Leads, quotes, opportunities and sales funnel",                  g:"Core"},
+  {id:"documents",  label:"Documents",              desc:"Contracts, brochures and product specifications",                g:"Core"},
+  // Insights
+  {id:"reports",    label:"Reports & Analytics",    desc:"Revenue, inventory turnover and pipeline analytics",             g:"Insights"},
+  // CRM
+  {id:"companies",  label:"Companies & Contacts",   desc:"Dealers, customers, suppliers and manufacturer contacts",       g:"CRM"},
+  // Publishing
+  {id:"marketplace",label:"Marketplace Publish",    desc:"Control listing publication and marketplace visibility",        g:"Publishing"},
+  // Finance
+  {id:"billing",    label:"Billing & Invoicing",    desc:"Invoices, payments and subscriptions",                          g:"Finance"},
+  // Integrations
+  {id:"int_shopify",label:"Shopify Integration",    desc:"Connect and sync inventory with your Shopify store",            g:"Integrations"},
+  {id:"int_mfg",    label:"Manufacturer Feeds",     desc:"Import product data from manufacturer catalogues",              g:"Integrations"},
+  {id:"int_mkt",    label:"Marketplace Connections",desc:"Configure connections to external listing portals",             g:"Integrations"},
+  {id:"int_import", label:"External Data Imports",  desc:"Import data from spreadsheets and third-party platforms",       g:"Integrations"},
 ];
 const BY_PM={
-  "Admin":  {inventory:"full",pricing:"full",  sales:"full", documents:"full",reports:"full",  companies:"full",  marketplace:"full",billing:"full",users:"full", settings:"full"},
-  "Owner":  {inventory:"full",pricing:"full",  sales:"full", documents:"full",reports:"full",  companies:"full",  marketplace:"full",billing:"full",users:"full", settings:"view"},
-  "Manager":{inventory:"full",pricing:"view",  sales:"full", documents:"full",reports:"view",  companies:"full",  marketplace:"full",billing:"none",users:"view", settings:"none"},
-  "Editor": {inventory:"full",pricing:"none",  sales:"view", documents:"full",reports:"none",  companies:"view",  marketplace:"view", billing:"none",users:"none", settings:"none"},
-  "Viewer": {inventory:"view",pricing:"none",  sales:"view", documents:"view",reports:"view",  companies:"view",  marketplace:"none", billing:"none",users:"none", settings:"none"},
+  "Admin":  {inventory:"full",pricing:"full",sales:"full",documents:"full",reports:"full",  companies:"full",  marketplace:"full",billing:"full", int_shopify:"full",int_mfg:"full",int_mkt:"full",int_import:"full"},
+  "Owner":  {inventory:"full",pricing:"full",sales:"full",documents:"full",reports:"full",  companies:"full",  marketplace:"full",billing:"full", int_shopify:"view",int_mfg:"view",int_mkt:"view",int_import:"view"},
+  "Manager":{inventory:"full",pricing:"view",sales:"full",documents:"full",reports:"view",  companies:"full",  marketplace:"full",billing:"none", int_shopify:"view",int_mfg:"view",int_mkt:"view",int_import:"none"},
+  "Editor": {inventory:"full",pricing:"none",sales:"view",documents:"full",reports:"none",  companies:"view",  marketplace:"view", billing:"none", int_shopify:"none",int_mfg:"none",int_mkt:"none",int_import:"none"},
+  "Viewer": {inventory:"view",pricing:"none",sales:"view",documents:"view",reports:"view",  companies:"view",  marketplace:"none", billing:"none", int_shopify:"none",int_mfg:"none",int_mkt:"none",int_import:"none"},
 };
 const BY_USERS=[
   {id:1,name:"Carlos Mendes",    email:"c.mendes@bluewave.com",  av:"CM",role:"Owner",  cls:"bto",tenant:"BlueWave Boats",  status:"active", last:"1h ago"},
@@ -467,17 +499,20 @@ const BY_USERS=[
 
 /* ════ STATE ════ */
 const S={
-  prod:"yiq",page:"users",byPage:"by-models",
-  sbCol:false,settOpen:true,byGrp:"by-inventory",
+  prod:"yiq",page:"users",byPage:"by-roles",
+  sbCol:false,settOpen:true,byGrp:"by-settings",
   permRole:"Broker",permOv:{},
   fieldRole:"Broker",fieldFp:{...FD["Broker"]},
   scopeActive:"brand",
   effExp:1,
   impApplied:false,
   rolesView:"matrix",
+  roleDetailSel:"Broker",roleDetailTab:"permissions",  // improvement 1
+  compareOpen:false,compareRoles:["Broker","Viewer","Admin"],  // improvement 3
   invStep:0,invRole:"broker",
   uModalId:null,uModalTab:"overview",
-  byRolesSel:"Manager",byRolesP:{...BY_PM["Manager"]},
+  byRolesSel:"Manager",byRolesP:{...BY_PM["Manager"]},byRolesSummaryOpen:true,
+  byCompaniesTab:"company",
   byInvStep:0,byInvRole:"manager",
 };
 
@@ -559,14 +594,13 @@ const SN=[
   {id:"invites",    lb:"Pending Invites", ic:"invite",      badge:3},
   {id:"roles",      lb:"Roles",           ic:"roles",       badge:null},
   {id:"permissions",lb:"Permissions",     ic:"permissions", badge:null},
-  {id:"scopes",     lb:"Data Scopes",     ic:"scopes",      badge:null},
   {id:"fields",     lb:"Field Visibility",ic:"fields",      badge:null},
   {id:"effective",  lb:"Effective Access",ic:"effective",   badge:null},
   {id:"impact",     lb:"Impact Analysis", ic:"impact",      badge:2},
   {id:"audit",      lb:"Audit Log",       ic:"audit",       badge:null},
 ];
 const SIDs=new Set(SN.map(n=>n.id));
-const PM2={dashboard:"Dashboard",yachts:"Yachts",yachtshow:"Yachts Show",lists:"Lists & Shows",updates:"Yachts Updates",matches:"Yacht Matches",market:"Market Intelligence",shipyards:"Shipyards",emails:"Emails",centrals:"Centrals & Deals",users:"Team & Users",invites:"Pending Invites",roles:"Roles",permissions:"Permissions",scopes:"Data Scopes",fields:"Field Visibility",effective:"Effective Access",impact:"Impact Analysis",audit:"Audit Log"};
+const PM2={dashboard:"Dashboard",yachts:"Yachts",yachtshow:"Yachts Show",lists:"Lists & Shows",updates:"Yachts Updates",matches:"Yacht Matches",market:"Market Intelligence",shipyards:"Shipyards",emails:"Emails",centrals:"Centrals & Deals",users:"Team & Users",invites:"Pending Invites",roles:"Roles",permissions:"Permissions",fields:"Field Visibility",effective:"Effective Access",impact:"Impact Analysis",audit:"Audit Log"};
 let settOpen=true;
 
 function renderNav(){
@@ -669,7 +703,7 @@ function renderPage(){
   if(!SIDs.has(S.page)){el.innerHTML='';return;}
   const pages={
     users:renderUsers,invites:renderInvites,roles:renderRoles,
-    permissions:renderPermissions,scopes:renderScopes,
+    permissions:renderPermissions,
     fields:renderFields,effective:renderEffective,
     impact:renderImpact,audit:renderAudit,
   };
@@ -678,18 +712,26 @@ function renderPage(){
 
 /* ── USERS ── */
 function renderUsers(){
+  // Scope chip with plain-language label inline in table
+  function scopeCell(u){
+    const sd=SCOPES_DEF[u.scope]||SCOPES_DEF.brand;
+    return `<div>
+      <span class="sc-chip ${sd.cls}">${sd.short}</span>
+      <div style="font-size:10.5px;color:var(--g75);margin-top:2px;max-width:180px;white-space:normal;line-height:1.3">${sd.desc.split('.')[0]}.</div>
+    </div>`;
+  }
   const rows=USERS.map(u=>`<tr onclick="openUModal(${u.id})" style="cursor:pointer">
     <td><div style="display:flex;align-items:center;gap:9px">${av(u.av,30)}<div><div class="tpri" style="font-size:13px">${u.name}</div><div style="font-size:11px;color:var(--g75)">${u.email}</div></div></div></td>
     <td>${roleTag(u.role)}</td>
-    <td>${scTag(u.scope)}</td>
-    <td style="font-size:12.5px">${u.brand}</td>
+    <td>${scopeCell(u)}</td>
+    <td style="font-size:12.5px;color:var(--g39)">${u.brand}</td>
     <td><span class="tag ${u.status==='active'?'t-ok':'t-wn'}">${u.status}</span></td>
     <td style="font-size:12px;color:var(--g75)">${u.last}</td>
     <td><button class="btn bg bsm" onclick="event.stopPropagation();openUModal(${u.id})">→</button></td>
   </tr>`).join('');
   return `<div class="pg">
     <div class="pg-hd">
-      <div><div class="pg-t">Team & Users</div><div class="pg-s">Manage who has access and what they can do</div></div>
+      <div><div class="pg-t">Team & Users</div><div class="pg-s">Manage who has access, their role, and which data they can see</div></div>
       <button class="btn bp" onclick="openInvite()">+ Invite User</button>
     </div>
     <div class="g3" style="margin-bottom:16px">
@@ -701,8 +743,15 @@ function renderUsers(){
         <select class="sel" onchange="this.closest('.card').querySelectorAll('tbody tr').forEach(r=>r.style.display=(!this.value||r.cells[1]?.textContent.trim()===this.value)?'':'none')">
           <option value="">All Roles</option>${ROLES.map(r=>`<option value="${r.name}">${r.name}</option>`).join('')}
         </select>
+        <select class="sel" onchange="this.closest('.card').querySelectorAll('tbody tr').forEach(r=>r.style.display=(!this.value||r.cells[2]?.textContent.includes(this.value))?'':'none')">
+          <option value="">All Scopes</option>${SCOPE_IDS.map(s=>`<option value="${SCOPES_DEF[s].short}">${SCOPES_DEF[s].lb}</option>`).join('')}
+        </select>
       </div>
-      <div class="tw"><table><thead><tr><th>User</th><th>Role</th><th>Scope</th><th>Brand</th><th>Status</th><th>Last Active</th><th></th></tr></thead>
+      <div class="tw"><table><thead><tr>
+        <th>User</th><th>Role</th>
+        <th>Data Scope <span style="font-size:9px;font-weight:400;color:var(--g75);text-transform:none;letter-spacing:0">— assigned per user</span></th>
+        <th>Brand</th><th>Status</th><th>Last Active</th><th></th>
+      </tr></thead>
       <tbody>${rows}</tbody></table></div>
     </div>
   </div>`;
@@ -733,14 +782,26 @@ function renderInvites(){
 }
 
 /* ── ROLES ── */
+/* ── ROLES — overview + role-detail (Improvement 1) ── */
 function renderRoles(){
   const v=S.rolesView;
+  // If a role is selected for detail view, show role detail
+  if(S.roleDetailSel && v==='detail') return renderRoleDetail();
+
   let body='';
   if(v==='cards'){
     body=`<div class="g3">${ROLES.map(r=>`
-      <div class="card"><div class="ch" style="justify-content:space-between">${roleTag(r.name)}<span style="font-size:12px;color:var(--g75)">${r.users} users</span></div>
-      <div class="card-body" style="padding:14px 16px"><div style="font-size:13px;color:var(--g39);line-height:1.6;margin-bottom:10px">${r.desc}</div>
-      <div class="dvd" style="margin-bottom:9px"></div><button class="btn bg bsm" onclick="openRoleCreate()">Edit →</button></div></div>`).join('')}
+      <div class="card" style="cursor:pointer;transition:box-shadow .15s" onclick="S.roleDetailSel='${r.name}';S.rolesView='detail';renderPage()">
+        <div class="ch" style="justify-content:space-between">${roleTag(r.name)}<span style="font-size:12px;color:var(--g75)">${r.users} users</span></div>
+        <div class="card-body" style="padding:12px 16px">
+          <div style="font-size:13px;color:var(--g39);line-height:1.6;margin-bottom:10px">${r.desc}</div>
+          <div class="dvd" style="margin-bottom:9px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${_rolePermSummary(r.name)}
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--p);font-weight:600">Configure role →</div>
+        </div>
+      </div>`).join('')}
       <div class="card" style="cursor:pointer;border:1px dashed var(--p200);background:none" onclick="openRoleCreate()">
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:120px;gap:7px;padding:16px">
           <div style="width:34px;height:34px;border-radius:50%;border:1.5px dashed var(--p200);display:flex;align-items:center;justify-content:center">${ico('plus',15,'var(--g75)')}</div>
@@ -749,20 +810,21 @@ function renderRoles(){
       </div>
     </div>`;
   } else {
-    const cols=["Viewer","Broker","Admin"];
+    // Matrix view
+    const cols=["Viewer","Broker","Listing Manager","Analyst","Admin"];
     let rows='';
     ENTITIES.forEach(en=>{
-      rows+=`<tr><td colspan="${cols.length+1}" style="padding:8px 14px;background:var(--p50);border-top:1px solid var(--p150);border-bottom:1px solid var(--p150)">
+      rows+=`<tr><td colspan="${cols.length+1}" style="padding:7px 14px;background:var(--p50);border-top:1px solid var(--p150);border-bottom:1px solid var(--p150)">
         <span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--g39)">${en.label}</span>
         <span style="font-size:11px;color:var(--g75);margin-left:6px">${en.desc}</span>
       </td></tr>`;
       ACTIONS.forEach(a=>{
         const anyHas=cols.some(r=>!!((PM[r]||{})[en.label]||{})[a]);
         if(!anyHas) return;
-        rows+=`<tr style="border-bottom:1px solid var(--p150)"><td style="padding:8px 14px 8px 22px;font-size:13px;color:var(--g39)">${a}</td>
+        rows+=`<tr style="border-bottom:1px solid var(--p150)"><td style="padding:7px 14px 7px 22px;font-size:13px;color:var(--g39)">${a}</td>
         ${cols.map(r=>{
           const has=!!((PM[r]||{})[en.label]||{})[a];
-          return `<td style="padding:8px 14px;text-align:center;border-left:1px solid var(--p150)">
+          return `<td style="padding:7px 14px;text-align:center;border-left:1px solid var(--p150)">
             <span style="display:inline-flex;width:20px;height:20px;border-radius:5px;align-items:center;justify-content:center;font-size:10px;font-weight:700" class="${has?'m-on':'m-off'}">${has?'✓':'–'}</span>
           </td>`;
         }).join('')}
@@ -770,27 +832,110 @@ function renderRoles(){
       });
     });
     body=`<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%">
-      <thead><tr><th style="padding:10px 14px;background:var(--p25);border-bottom:2px solid var(--p150);text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--g39)">ENTITY / ACTION</th>
-      ${cols.map(r=>`<th style="padding:10px 14px;text-align:center;background:var(--p25);border-bottom:2px solid var(--p150);border-left:1px solid var(--p150)">${roleTag(r)}</th>`).join('')}</tr></thead>
+      <thead><tr>
+        <th style="padding:10px 14px;background:var(--p25);border-bottom:2px solid var(--p150);text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--g39);position:sticky;left:0;z-index:2">ENTITY / ACTION</th>
+        ${cols.map(r=>`<th style="padding:10px 14px;text-align:center;background:var(--p25);border-bottom:2px solid var(--p150);border-left:1px solid var(--p150);cursor:pointer;white-space:nowrap" onclick="S.roleDetailSel='${r}';S.rolesView='detail';renderPage()">${roleTag(r)}<div style="font-size:9px;color:var(--g75);font-weight:400;margin-top:2px">click to configure</div></th>`).join('')}
+      </tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
   }
   return `<div class="pg">
     <div class="pg-hd">
-      <div><div class="pg-t">Roles</div><div class="pg-s">Define what each person can do within their assigned scope</div></div>
+      <div><div class="pg-t">Roles</div><div class="pg-s">Select a role to view and configure its full permission profile</div></div>
       <div class="acts">
         <button class="btn ${v==='cards'?'bp':'bs'}" onclick="S.rolesView='cards';renderPage()">≡ Cards</button>
         <button class="btn ${v==='matrix'?'bp':'bs'}" onclick="S.rolesView='matrix';renderPage()">⊞ Matrix</button>
+        <button class="btn bs" onclick="S.compareOpen=true;renderPage()">⇄ Compare Roles</button>
         <button class="btn bp" onclick="openRoleCreate()">+ New Role</button>
       </div>
     </div>
     ${body}
+    ${S.compareOpen ? renderComparePanel() : ''}
   </div>`;
 }
 
-/* ── PERMISSIONS (fixed) ── */
-function renderPermissions(){
-  const role=S.permRole; const ov=S.permOv;
+// Helper: small permission summary chips for role cards
+function _rolePermSummary(roleName){
+  const perms=PM[roleName]||{};
+  let allowed=0,denied=0;
+  ENTITIES.forEach(en=>{ ACTIONS.forEach(a=>{ if((perms[en.label]||{})[a]) allowed++; else denied++; }); });
+  const fields=FD[roleName]||{};
+  const hidden=Object.values(fields).filter(v=>v==='hidden').length;
+  return `<span style="font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--greenl);color:var(--green);font-weight:600">${allowed} allowed</span>
+    <span style="font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--p50);color:var(--g75);font-weight:600">${denied} denied</span>
+    <span style="font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--amberl);color:var(--amber);font-weight:600">${hidden} fields hidden</span>`;
+}
+
+/* ── ROLE DETAIL — unified role configuration (Improvement 1 core) ── */
+function renderRoleDetail(){
+  const role=S.roleDetailSel;
+  const tab=S.roleDetailTab;
+  const rObj=ROLES.find(r=>r.name===role)||ROLES[0];
+
+  // Sidebar: all roles listed for quick switching
+  const sidebar=ROLES.map(r=>`
+    <div onclick="S.roleDetailSel='${r.name}';S.roleDetailTab='permissions';renderPage()" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;cursor:pointer;margin-bottom:2px;background:${r.name===role?'var(--p25)':'transparent'};border:1px solid ${r.name===role?'var(--p150)':'transparent'};transition:all .12s">
+      <span class="tag ${r.cls}">${r.name}</span>
+      <span style="flex:1;font-size:11px;color:var(--g75)">${r.users} users</span>
+      ${r.name===role ? ico('chev',10,'var(--p)') : ''}
+    </div>`).join('');
+
+  const tabs=[
+    {id:'permissions', label:'Permissions',      icon:'permissions'},
+    {id:'scope',       label:'Data Scope',        icon:'scopes'},
+    {id:'fields',      label:'Field Visibility',  icon:'fields'},
+    {id:'preview',     label:'Effective Preview', icon:'effective'},
+  ];
+
+  let content='';
+  if(tab==='permissions') content=_rdPermissions(role);
+  else if(tab==='scope')   content=_rdScope(role);
+  else if(tab==='fields')  content=_rdFields(role);
+  else if(tab==='preview') content=_rdPreview(role);
+
+  return `<div class="pg" style="padding-top:16px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
+      <button class="btn bs bsm" onclick="S.rolesView='cards';renderPage()">← All Roles</button>
+      <span style="color:var(--g75);font-size:13px">›</span>
+      ${roleTag(role)}
+      <span style="font-size:13px;color:var(--g75)">${rObj.users} users</span>
+      <div style="flex:1"></div>
+      <button class="btn bs bsm" onclick="S.compareOpen=true;renderPage()">⇄ Compare</button>
+      <button class="btn bp bsm" onclick="openRoleCreate()">Edit Role</button>
+    </div>
+
+    <div style="display:flex;gap:20px;align-items:flex-start">
+      <!-- Role switcher sidebar -->
+      <div style="width:180px;flex-shrink:0">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g75);margin-bottom:8px;padding-left:4px">All Roles</div>
+        ${sidebar}
+      </div>
+
+      <!-- Main detail area -->
+      <div style="flex:1;min-width:0">
+        <!-- Role summary bar -->
+        <div class="card" style="padding:14px 18px;margin-bottom:14px;background:var(--p25);border-color:var(--p150)">
+          <div style="font-size:12.5px;color:var(--g39);line-height:1.6;margin-bottom:12px">${rObj.desc}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${_rolePermSummary(role)}</div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs" style="margin-bottom:0;border-bottom:2px solid var(--p150)">
+          ${tabs.map(t=>`<div class="tab${tab===t.id?' on':''}" onclick="S.roleDetailTab='${t.id}';renderPage()" style="display:flex;align-items:center;gap:6px">
+            ${ico(t.icon,13,tab===t.id?'var(--p)':'var(--g75)')}
+            ${t.label}
+          </div>`).join('')}
+        </div>
+        <div style="padding-top:16px">${content}</div>
+      </div>
+    </div>
+    ${S.compareOpen ? renderComparePanel() : ''}
+  </div>`;
+}
+
+/* Tab: Permissions */
+function _rdPermissions(role){
+  const ov=S.permOv;
   const base=PM[role]||{};
   function getV(el,a){const k=el+':'+a;return ov[k]!==undefined?ov[k]:!!(base[el]&&base[el][a]);}
   const hasChg=Object.keys(ov).length>0;
@@ -800,8 +945,7 @@ function renderPermissions(){
     const pills=ACTIONS.map(a=>{
       const on=getV(en.label,a);
       const changed=ov[en.label+':'+a]!==undefined;
-      return `<div class="ap ${on?'on':'off'}" onclick="togglePerm('${en.label}','${a}')"
-        style="${changed?'outline:2px solid var(--p300);outline-offset:2px':''}">
+      return `<div class="ap ${on?'on':'off'}" onclick="togglePerm('${en.label}','${a}')" style="${changed?'outline:2px solid var(--p300);outline-offset:2px':''}">
         ${a}<div class="ap-d">${on?'✓':'–'}</div>
       </div>`;
     }).join('');
@@ -811,13 +955,10 @@ function renderPermissions(){
           <button style="width:34px;height:19px;border-radius:999px;border:none;cursor:pointer;position:relative;flex-shrink:0;background:${hasAny?'var(--p)':'var(--p200)'};transition:background .2s">
             <span style="width:13px;height:13px;background:#fff;border-radius:50%;position:absolute;top:3px;left:${hasAny?18:3}px;transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)"></span>
           </button>
-          <div>
-            <div class="ct">${en.label}</div>
-            <div style="font-size:11px;color:var(--g39);margin-top:1px">${en.desc}</div>
-          </div>
+          <div><div class="ct">${en.label}</div><div style="font-size:11px;color:var(--g39);margin-top:1px">${en.desc}</div></div>
         </div>
         ${hasAny?`<div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:11px;color:var(--g39)">Scope:</span>
+          <span style="font-size:11px;color:var(--g39)">Scope restriction:</span>
           <select class="sel" style="height:25px;font-size:11px"><option>Follows user's scope</option><option>Brand only</option><option>Authored only</option></select>
         </div>`:''}
       </div>
@@ -825,195 +966,375 @@ function renderPermissions(){
     </div>`;
   }).join('');
 
-  return `<div class="pg">
-    <div class="pg-hd">
-      <div><div class="pg-t">Permissions</div><div class="pg-s">Configure what each role can do, per entity</div></div>
-      <div class="acts">
-        <select class="sel" onchange="S.permRole=this.value;S.permOv={};renderPage()">${ROLES.map(r=>`<option value="${r.name}"${r.name===role?' selected':''}>${r.name}</option>`).join('')}</select>
-        ${hasChg?`<span style="font-size:12px;color:var(--amber);display:flex;align-items:center;gap:4px">${ico('impact',14,'var(--amber)')} ${Object.keys(ov).length} unsaved</span>`:''}
-        <button class="btn bs" ${!hasChg?'disabled':''} onclick="S.permOv={};renderPage()">Discard</button>
-        <button class="btn bp" ${!hasChg?'disabled':''}>Save Changes</button>
-      </div>
-    </div>
-    <div class="notice n-i">${ico('info',14,'#1e3a8a')}<span>Permissions = what actions are possible. Data Scopes = which records those actions apply to.</span></div>
-    <div>${cards}</div>
+  return `<div>
+    ${hasChg?`<div class="notice n-w" style="margin-bottom:12px">${ico('impact',13,'var(--amber)')}<span>${Object.keys(ov).length} unsaved changes — <button class="btn bg bsm" onclick="S.permOv={};renderPage()">Discard</button> <button class="btn bp bsm">Save Changes</button></span></div>`:''}
+    <div class="notice n-i" style="margin-bottom:12px">${ico('info',13,'#1e3a8a')}<span>Permissions define <em>what actions are possible</em>. Set Data Scope in the next tab to control <em>which records</em> those actions apply to.</span></div>
+    ${cards}
   </div>`;
 }
-function togglePerm(el,a){
-  const k=el+':'+a;
-  const base=PM[S.permRole]||{};
-  const cur=S.permOv[k]!==undefined?S.permOv[k]:!!(base[el]&&base[el][a]);
-  S.permOv[k]=!cur;
-  renderPage();
-}
 
-/* ── SCOPES ── */
-function renderScopes(){
+/* Tab: Data Scope — with rich visual explanation (Improvement 2) */
+function _rdScope(role){
+  // Default scope per role
+  const roleScopes={Admin:'all',Broker:'brand','Listing Manager':'brand',Analyst:'cross-brand','Support Agent':'brand',Viewer:'authored'};
+  const defaultScope=roleScopes[role]||'brand';
+
   const SCOPES=[
-    {id:'authored',  lb:'Authored Only',users:4, risk:'Low',    rc:'t-ok',   hl:'User sees only records they personally created',
-     ex:"Elena can edit notes she wrote, but cannot see Penelope's — even within the same brand.",
-     yachts:[{n:"REINE D'AZUR",b:"Fraser",a:true},{n:"CASINO ROYALE",b:"Fraser",a:false},{n:"SCENIC ECLIPSE",b:"Burgess",a:false},{n:"ETERNITY",b:"OceanCo",a:false},{n:"BLUE INFINITY",b:"Y.CO",a:false}]},
-    {id:'brand',     lb:'Brand-Scoped', users:28,risk:'Medium', rc:'t-wn',   hl:'User sees all records within their assigned brokerage',
-     ex:"Penelope (Fraser) sees all Fraser listings. She cannot see Burgess or OceanCo records.",
-     yachts:[{n:"REINE D'AZUR",b:"Fraser",a:true},{n:"CASINO ROYALE",b:"Fraser",a:true},{n:"SCENIC ECLIPSE",b:"Burgess",a:false},{n:"ETERNITY",b:"OceanCo",a:false},{n:"BLUE INFINITY",b:"Y.CO",a:false}]},
-    {id:'cross-brand',lb:'Cross-Brand', users:5, risk:'High',   rc:'t-dg',   hl:'User sees records across a defined set of brands',
-     ex:"Akachi (Fraser+Burgess) sees both brokerages' full data but not OceanCo or Y.CO.",
-     yachts:[{n:"REINE D'AZUR",b:"Fraser",a:true},{n:"CASINO ROYALE",b:"Fraser",a:true},{n:"SCENIC ECLIPSE",b:"Burgess",a:true},{n:"ETERNITY",b:"OceanCo",a:false},{n:"BLUE INFINITY",b:"Y.CO",a:false}]},
-    {id:'all',        lb:'All Data',    users:2, risk:'Critical',rc:'t-dg',   hl:'No brand boundaries — user sees everything on the platform',
-     ex:"Ricardo (Admin) sees all 6 brokerages' listings, notes, deals, history.",
-     yachts:[{n:"REINE D'AZUR",b:"Fraser",a:true},{n:"CASINO ROYALE",b:"Fraser",a:true},{n:"SCENIC ECLIPSE",b:"Burgess",a:true},{n:"ETERNITY",b:"OceanCo",a:true},{n:"BLUE INFINITY",b:"Y.CO",a:true}]},
+    {id:'authored',   lb:'Authored Only', risk:'Low',    rc:'t-ok',
+     hl:'User sees only records they personally created or were assigned to.',
+     can:[{b:'Fraser Yachts',items:['Listings I created','Notes I authored','Shows I organized']},],
+     cannot:[{b:'Fraser Yachts',items:["Other brokers' listings","Team notes","Company-wide shows"]},{b:'Burgess Yachts',items:['All records']},{b:'OceanCo',items:['All records']}],
+     example:'Elena (Viewer, Authored) can edit the yacht notes she wrote last week, but cannot see notes her colleague Penelope added to the same listing.'},
+    {id:'brand',      lb:'Brand-Scoped',  risk:'Medium', rc:'t-wn',
+     hl:'User sees all records within their assigned brokerage — across all brokers in that brand.',
+     can:[{b:'Fraser Yachts',items:['All yacht listings','All broker notes','Yacht shows','Emails','Sales history']},],
+     cannot:[{b:'Burgess Yachts',items:['All records']},{b:'OceanCo',items:['All records']},{b:'N&J',items:['All records']}],
+     example:'Penelope (Broker, Fraser) can see every Fraser Yachts listing — including listings from other Fraser brokers. She cannot see any Burgess or OceanCo records, even in shared shows.'},
+    {id:'cross-brand',lb:'Cross-Brand',   risk:'High',   rc:'t-dg',
+     hl:'User sees records across a defined set of brands. Configured per-user.',
+     can:[{b:'Fraser Yachts',items:['All yacht listings','All notes','Sales history']},{b:'Burgess Yachts',items:['All yacht listings','All notes','Sales history']}],
+     cannot:[{b:'OceanCo',items:['All records']},{b:'N&J',items:['All records']},{b:'Y.CO',items:['All records']}],
+     example:"Akachi (Analyst, Cross-Brand) is assigned Fraser + Burgess. She can run market intelligence reports across both brokerages, but cannot see OceanCo or N&J data even if it's in the same search results."},
+    {id:'all',        lb:'All Data',      risk:'Critical',rc:'t-dg',
+     hl:'No brand boundaries. User sees every record across all brokerages on the platform.',
+     can:[{b:'All Brokerages',items:['Fraser Yachts — all data','Burgess Yachts — all data','OceanCo — all data','N&J — all data','Y.CO — all data','System settings & audit logs']}],
+     cannot:[],
+     example:'Ricardo (Admin, All Data) can view and manage every listing, deal, note and user across all 6 brokerages. Reserve for Admin roles only.'},
   ];
-  const a=S.scopeActive; const sel=SCOPES.find(s=>s.id===a);
-  const cards=SCOPES.map(s=>{
-    const on=s.id===a;
-    return `<div onclick="S.scopeActive='${s.id}';renderPage()" style="background:${on?'var(--p)':'#fff'};border:1.5px solid ${on?'var(--p)':'var(--p150)'};border-radius:10px;padding:14px;cursor:pointer;transition:all .15s">
-      <div style="width:34px;height:34px;border-radius:7px;background:${on?'rgba(255,255,255,.18)':'var(--p50)'};display:flex;align-items:center;justify-content:center;margin-bottom:8px">
-        ${scopeIco(s.id,18,on?'#fff':'var(--p)')}
+
+  const activeId=S.scopeActive||defaultScope;
+  const sel=SCOPES.find(s=>s.id===activeId)||SCOPES[1];
+
+  const scopeCards=SCOPES.map(s=>{
+    const on=s.id===activeId;
+    const isDefault=s.id===defaultScope;
+    return `<div onclick="S.scopeActive='${s.id}';renderPage()" style="padding:12px 14px;border-radius:8px;border:1.5px solid ${on?'var(--p)':'var(--p150)'};background:${on?'var(--p25)':'#fff'};cursor:pointer;transition:all .14s;display:flex;align-items:center;gap:10px">
+      <div style="width:32px;height:32px;border-radius:7px;background:${on?'var(--p15)':'var(--p50)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${scopeIco(s.id,16,on?'var(--p)':'var(--g75)')}
       </div>
-      <div style="font-size:13px;font-weight:600;color:${on?'#fff':'var(--g11)'};margin-bottom:4px">${s.lb}</div>
-      <div style="display:flex;align-items:center;gap:5px">
-        <span style="font-size:11px;color:${on?'rgba(255,255,255,.7)':'var(--g75)'}">${s.users} users</span>
-        <span class="tag ${s.rc}">${s.risk}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:${on?'var(--g11)':'var(--g39)'}">${s.lb}</div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
+          <span class="tag ${s.rc}" style="font-size:10px">${s.risk}</span>
+          ${isDefault?`<span style="font-size:10px;color:var(--p);font-weight:600">Default for ${role}</span>`:''}
+        </div>
       </div>
+      ${on?`<div style="width:8px;height:8px;border-radius:50%;background:var(--p);flex-shrink:0"></div>`:''}
     </div>`;
   }).join('');
-  const sim=sel?sel.yachts.map((y,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:${i<sel.yachts.length-1?'1px solid var(--p150)':'none'};background:${y.a?'#fff':'var(--p25)'}">
-      <div style="width:24px;height:24px;border-radius:50%;background:${y.a?'var(--greenl)':'var(--p100)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        ${ico(y.a?'check':'x',12,y.a?'var(--green)':'var(--g75)')}
-      </div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:500;color:${y.a?'var(--g11)':'var(--g75)'};text-decoration:${y.a?'none':'line-through'}">${y.n}</div>
-      <div style="font-size:11px;color:var(--g75)">${y.b}</div></div>
-      <span class="tag ${y.a?'t-ok':'t-mu'}">${y.a?'Visible':'Hidden'}</span>
-    </div>`).join(''):'';
 
-  return `<div class="pg">
-    <div class="pg-hd"><div><div class="pg-t">Data Scopes</div><div class="pg-s">Control which records a user can see — independent of their role permissions</div></div></div>
-    <div class="notice n-i">${ico('info',14,'#1e3a8a')}<span><strong>Roles define actions. Scopes define which records those actions apply to.</strong></span></div>
-    <div class="g4" style="margin-bottom:18px">${cards}</div>
-    ${sel?`<div class="g2" style="gap:18px">
-      <div class="card" style="padding:18px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="width:40px;height:40px;border-radius:9px;background:var(--p50);display:flex;align-items:center;justify-content:center;flex-shrink:0">${scopeIco(sel.id,20,'var(--p)')}</div>
-          <div style="flex:1"><div style="font-size:14px;font-weight:600">${sel.lb}</div><div style="font-size:12px;color:var(--g39);margin-top:1px">${sel.users} users on this scope</div></div>
-          <span class="tag ${sel.rc}">${sel.risk} risk</span>
+  // Access visualisation
+  const canRows=sel.can.map(b=>`
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--g39);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px">
+        ${ico('check',12,'var(--green)')} ${b.b}
+      </div>
+      ${b.items.map(it=>`<div style="font-size:12.5px;color:var(--g11);padding:3px 0 3px 18px;border-left:2px solid var(--greenl);margin-left:5px;margin-bottom:2px">${it}</div>`).join('')}
+    </div>`).join('');
+
+  const cannotRows=sel.cannot.map(b=>`
+    <div style="margin-bottom:10px;opacity:.7">
+      <div style="font-size:11px;font-weight:700;color:var(--g75);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px">
+        ${ico('x',12,'var(--red)')} ${b.b}
+      </div>
+      ${b.items.map(it=>`<div style="font-size:12.5px;color:var(--g75);padding:3px 0 3px 18px;border-left:2px solid var(--redl);margin-left:5px;margin-bottom:2px;text-decoration:line-through">${it}</div>`).join('')}
+    </div>`).join('');
+
+  return `<div class="g2" style="gap:18px">
+    <div>
+      <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g75);margin-bottom:10px">Scope Level</div>
+      <div style="display:flex;flex-direction:column;gap:6px">${scopeCards}</div>
+      <div style="margin-top:12px;padding:11px 13px;background:var(--p50);border-radius:8px;border-left:3px solid var(--p)">
+        <div style="font-size:11.5px;color:var(--g39);line-height:1.6;font-style:italic">"${sel.example}"</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g75);margin-bottom:10px">Access Breakdown — ${sel.lb}</div>
+      <div style="font-size:13px;color:var(--g39);line-height:1.6;margin-bottom:14px">${sel.hl}</div>
+      <div class="g2" style="gap:12px">
+        <div class="card" style="padding:14px;border-color:var(--greenl)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:5px">${ico('check',12,'var(--green)')} Can Access</div>
+          ${canRows||'<div style="font-size:12px;color:var(--g75)">No restrictions</div>'}
         </div>
-        <div style="font-size:13px;color:var(--g39);line-height:1.7;margin-bottom:12px">${sel.hl}</div>
-        <div style="background:var(--p50);border-radius:7px;padding:10px 12px;font-size:13px;color:var(--g11);line-height:1.6;border-left:3px solid var(--p);font-style:italic">"${sel.ex}"</div>
+        <div class="card" style="padding:14px;border-color:var(--redl)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:5px">${ico('x',12,'var(--red)')} Cannot Access</div>
+          ${cannotRows||`<div style="font-size:12px;color:var(--g75)">No restrictions — full platform access</div>`}
+        </div>
       </div>
-      <div>
-        <div style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--g39);margin-bottom:9px">Visibility Simulation — Yachts</div>
-        <div class="card" style="overflow:hidden;padding:0">${sim}</div>
-      </div>
-    </div>`:''}
+    </div>
   </div>`;
 }
 
-/* ── FIELD VISIBILITY ── */
-function renderFields(){
-  const role=S.fieldRole; const fp=S.fieldFp;
-  const SAMP={"Yacht Name":"REINE D'AZUR","LOA / Beam / Draft":"95ft 2in / 21ft / 5ft 10in","Build Year / Yard":"2019 · Feadship, NL","Listing Price":"€ 7,300,000","Price History":"€7.5M → €7.3M","Owner Name":"Jean-Paul Beaumont","Owner Contact":"+33 6 12 34 56 78","Commission Terms":"4% central · 2% co-broker","Broker Fees":"€ 292,000","Internal Notes":"Owner flexible on timeline.","Central Agency":"Fraser Yachts","Co-broker Terms":"Open co-brokerage."};
+/* Tab: Field Visibility */
+function _rdFields(role){
+  const fp=S.fieldFp && S.fieldRole===role ? S.fieldFp : FD[role]||FD['Viewer'];
+  // Sync field role state to current role detail
+  if(S.fieldRole!==role){ S.fieldRole=role; S.fieldFp={...FD[role]}; }
+
   const hidden=YF.filter(f=>(fp[f.name]||'hidden')==='hidden').length;
   const viewOnly=YF.filter(f=>(fp[f.name]||'hidden')==='view').length;
   const editable=YF.filter(f=>(fp[f.name]||'hidden')==='edit').length;
   const LC={
-    hidden:{idle:{bg:'var(--p50)',co:'var(--p300)'},  active:{bg:'var(--p900)',co:'#fff'},lb:'Hidden'},
-    view:  {idle:{bg:'var(--p100)',co:'var(--p700)'}, active:{bg:'var(--p700)',co:'#fff'},lb:'View'},
-    edit:  {idle:{bg:'var(--p15)',co:'var(--p)'},     active:{bg:'var(--p)',   co:'#fff'},lb:'Edit'},
+    hidden:{idle:{bg:'var(--p50)',co:'var(--p300)'},active:{bg:'var(--p900)',co:'#fff'},lb:'Hidden'},
+    view:  {idle:{bg:'var(--p100)',co:'var(--p700)'},active:{bg:'var(--p700)',co:'#fff'},lb:'View'},
+    edit:  {idle:{bg:'var(--p15)',co:'var(--p)'},   active:{bg:'var(--p)',    co:'#fff'},lb:'Edit'},
   };
+
   const cats=['Identity','Specs','Commercial','Ownership','Internal','Brokerage'];
   let frows='';
   cats.forEach(cat=>{
     const fields=YF.filter(f=>f.c===cat); if(!fields.length) return;
-    frows+=`<div style="padding:6px 13px;background:var(--p50);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--p400);border-top:1px solid var(--p150);border-bottom:1px solid var(--p150)">${cat}</div>`;
+    frows+=`<div style="padding:5px 12px;background:var(--p50);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--p400);border-top:1px solid var(--p150);border-bottom:1px solid var(--p150)">${cat}</div>`;
     fields.forEach(f=>{
       const lv=fp[f.name]||'hidden';
       const pills=['hidden','view','edit'].map(opt=>{
         const on=lv===opt; const cfg=LC[opt];
         return `<span class="fp" onclick="setFL('${f.name}','${opt}')" style="background:${on?cfg.active.bg:cfg.idle.bg};color:${on?cfg.active.co:cfg.idle.co};${on?'outline:2px solid var(--p200);outline-offset:1px':''}">${cfg.lb}</span>`;
       }).join('');
-      frows+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 13px;border-bottom:1px solid var(--p150)">
+      frows+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--p150)">
         <div style="flex:1;display:flex;align-items:center;gap:5px"><span style="font-size:13px">${f.name}</span>${sDot(f.s)}</div>
         <div style="display:flex;gap:3px">${pills}</div>
       </div>`;
     });
   });
-  let prev='';
-  YF.forEach(f=>{
-    const lv=fp[f.name]||'hidden'; if(lv==='hidden') return;
-    const cfg=LC[lv];
-    prev+=`<div style="margin-bottom:11px">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--p400);margin-bottom:3px;display:flex;align-items:center;gap:4px">
-        ${f.name} ${sDot(f.s)}
-        <span style="margin-left:auto;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;background:${cfg.active.bg};color:${cfg.active.co}">${cfg.lb}</span>
-      </div>
-      ${lv==='view'
-        ?`<div style="font-size:13px;color:var(--g11);background:var(--p50);border-radius:6px;padding:7px 10px;border-left:2px solid var(--p200)">${SAMP[f.name]||'—'}</div>`
-        :`<input class="inp" value="${(SAMP[f.name]||'—').replace(/"/g,'&quot;')}" style="font-size:13px"/>`}
-    </div>`;
-  });
-  if(hidden>0) prev+=`<div style="padding:7px 10px;background:var(--p50);border-radius:6px;font-size:12px;color:var(--p400);display:flex;align-items:center;gap:5px;border-left:2px solid var(--p150)">${ico('eye',13,'var(--p300)')} ${hidden} field${hidden!==1?'s':''} hidden from this role</div>`;
 
-  return `<div class="pg">
-    <div class="pg-hd">
-      <div><div class="pg-t">Field Visibility</div><div class="pg-s">Control which yacht fields each role can see or edit</div></div>
-      <div class="acts">
-        <select class="sel" onchange="S.fieldRole=this.value;S.fieldFp={...FD[this.value]};renderPage()">${ROLES.map(r=>`<option value="${r.name}"${r.name===role?' selected':''}>${r.name}</option>`).join('')}</select>
-      </div>
-    </div>
-    <div style="display:flex;gap:7px;margin-bottom:18px">
+  return `<div>
+    <div style="display:flex;gap:7px;margin-bottom:14px">
       ${[['Hidden',hidden,'var(--p50)','var(--p400)','var(--p200)'],['View only',viewOnly,'var(--p100)','var(--p700)','var(--p300)'],['Editable',editable,'var(--p)','#fff','var(--p700)']].map(([l,n,bg,co,bd])=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:9px 16px;background:${bg};border-radius:8px;flex:1;justify-content:center;border:1px solid ${bd}">
+        <div style="flex:1;padding:9px 12px;background:${bg};border-radius:8px;border:1px solid ${bd};display:flex;align-items:center;gap:8px">
           <span style="font-size:20px;font-weight:800;color:${co};line-height:1">${n}</span>
-          <div><div style="font-size:11.5px;font-weight:600;color:${co}">${l}</div><div style="font-size:10px;color:${co};opacity:.7">${l==='Hidden'?'not visible':l==='View only'?'read-only':'read+write'}</div></div>
+          <div><div style="font-size:11px;font-weight:600;color:${co}">${l}</div><div style="font-size:10px;color:${co};opacity:.7">${l==='Hidden'?'not visible':l==='View only'?'read-only':'read+write'}</div></div>
         </div>`).join('')}
     </div>
-    <div class="g2" style="gap:18px">
-      <div class="card" style="overflow:hidden;padding:0">
-        <div class="ch" style="justify-content:space-between;background:var(--p25)">
-          <div><div class="ct">Field Access — Yachts</div><div style="font-size:11px;color:var(--g39);margin-top:1px">Click to toggle: Hidden → View → Edit</div></div>
-          ${roleTag(role)}
-        </div>
-        <div style="overflow-y:auto;max-height:490px">${frows}</div>
+    <div class="card" style="overflow:hidden;padding:0">
+      <div class="ch" style="background:var(--p25);justify-content:space-between">
+        <div class="ct">Field Access — Yachts entity</div>
+        <div style="font-size:11px;color:var(--g39)">Click pills to toggle</div>
       </div>
-      <div>
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--g39);margin-bottom:9px;display:flex;align-items:center;gap:7px">Live Preview — ${roleTag(role)}</div>
-        <div class="card" style="padding:18px">
-          <div style="font-size:14px;font-weight:700;color:var(--p);letter-spacing:.5px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--p150)">REINE D'AZUR</div>
-          ${prev}
+      <div style="overflow-y:auto;max-height:360px">${frows}</div>
+    </div>
+  </div>`;
+}
+
+/* Tab: Effective Access Preview */
+function _rdPreview(role){
+  // Show users with this role + their effective access summary
+  const roleUsers=USERS.filter(u=>u.role===role);
+  const perms=PM[role]||PM['Viewer'];
+  const fields=FD[role]||FD['Viewer'];
+
+  function cando(u){
+    return[
+      {on:true,  t:`View ${u.scope==='brand'?u.brand:u.scope==='authored'?'authored records':'all'} yachts`, via:'Scope'},
+      {on:!!(perms['Yachts']?.Create), t:'Create yacht listings', via:'Role'},
+      {on:!!(perms['Yachts']?.Edit),   t:'Edit yacht listings',   via:'Role'},
+      {on:!!(perms['Yachts']?.Delete), t:'Delete yacht records',  via:'Role'},
+      {on:!!(perms['Yachts']?.Export), t:'Export yacht data',     via:'Role'},
+      {on:!!(perms['Yacht Lists']?.Share), t:'Share curated lists', via:'Role'},
+      {on:fields['Owner Contact']!=='hidden', t:'See owner contact details', via:'Fields'},
+      {on:fields['Commission Terms']!=='hidden', t:'See commission terms', via:'Fields'},
+    ];
+  }
+
+  // Access source pipeline visual (Improvement 4)
+  const sourcePipeline=`
+    <div style="display:flex;align-items:center;gap:0;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      ${[
+        {label:'Role',    val:role,       bg:'var(--p100)',co:'var(--p700)'},
+        {label:'Scope',   val:'Per user', bg:'var(--p50)', co:'var(--p400)'},
+        {label:'Fields',  val:`${Object.values(fields).filter(v=>v==='hidden').length} hidden`, bg:'var(--amberl)',co:'var(--amber)'},
+      ].map((src,i)=>`
+        <div style="display:flex;align-items:center;gap:6px">
+          ${i>0?`<span style="color:var(--g75);font-size:14px;font-weight:300">+</span>`:''}
+          <div style="padding:6px 12px;border-radius:7px;background:${src.bg};border:1px solid rgba(0,0,0,.06)">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:${src.co};opacity:.7">${src.label}</div>
+            <div style="font-size:12px;font-weight:600;color:${src.co};margin-top:1px">${src.val}</div>
+          </div>
+        </div>`).join('')}
+      <span style="color:var(--g75);font-size:14px;font-weight:300">=</span>
+      <div style="padding:6px 12px;border-radius:7px;background:var(--greenl);border:1px solid rgba(43,150,103,.2)">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green);opacity:.7">Effective</div>
+        <div style="font-size:12px;font-weight:600;color:var(--green);margin-top:1px">Access profile</div>
+      </div>
+    </div>`;
+
+  // Role-level capability table (like the image attached)
+  const capRows=[
+    {label:'View Yachts',        check:!!(perms['Yachts']?.View)},
+    {label:'Edit Yachts',        check:!!(perms['Yachts']?.Edit)},
+    {label:'Delete Yachts',      check:!!(perms['Yachts']?.Delete)},
+    {label:'Export Data',        check:!!(perms['Yachts']?.Export)},
+    {label:'Share Lists',        check:!!(perms['Yacht Lists']?.Share)},
+    {label:'Send Emails',        check:!!(perms['Emails']?.Create)},
+    {label:'View Sales History', check:!!(perms['Sales History']?.View)},
+    {label:'See Owner Contact',  check:fields['Owner Contact']!=='hidden'},
+    {label:'See Commission Terms',check:fields['Commission Terms']!=='hidden'},
+    {label:'Manage Users',       check:role==='Admin'},
+  ];
+
+  const capTable=`<div class="card" style="overflow:hidden;padding:0;margin-bottom:14px">
+    <div class="ch" style="background:var(--p25);justify-content:space-between">
+      <div class="ct">Capability Summary — ${role}</div>
+      <span style="font-size:11px;color:var(--g39)">${capRows.filter(r=>r.check).length}/${capRows.length} capabilities</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--p50);border-bottom:1px solid var(--p150)">
+        <th style="padding:8px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--g39);text-align:left">Capability</th>
+        <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--g39)">${role}</th>
+      </tr></thead>
+      <tbody>
+        ${capRows.map(row=>`<tr style="border-bottom:1px solid var(--p150)">
+          <td style="padding:9px 14px;font-size:13px;color:var(--g11)">${row.label}</td>
+          <td style="padding:9px 14px;text-align:center">
+            <span style="display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:${row.check?'var(--greenl)':'var(--p50)'};color:${row.check?'var(--green)':'var(--g75)'}">${row.check?'✓':'✕'}</span>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+  // Per-user effective access cards (Improvement 4 visual)
+  const userCards=roleUsers.length>0 ? roleUsers.map(u=>{
+    const cd=cando(u);
+    const allowed=cd.filter(x=>x.on).length;
+    const denied=cd.filter(x=>!x.on).length;
+    const pct=Math.round((allowed/(allowed+denied))*100);
+    return `<div class="card" style="padding:14px;margin-bottom:9px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        ${av(u.av,30)}
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:var(--g11)">${u.name}</div>
+          <div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap">${scTag(u.scope)} <span style="font-size:11px;color:var(--g39)">${u.brand}</span></div>
         </div>
+        <span class="tag ${u.status==='active'?'t-ok':'t-wn'}">${u.status}</span>
+      </div>
+      <!-- Access source pipeline per user (Improvement 4) -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px">
+        <span style="padding:2px 8px;border-radius:999px;background:var(--p100);color:var(--p700);font-weight:600">Role: ${u.role}</span>
+        <span style="color:var(--g75)">+</span>
+        <span style="padding:2px 8px;border-radius:999px;background:var(--p50);color:var(--p400);font-weight:600">Scope: ${u.scope}</span>
+        <span style="color:var(--g75)">+</span>
+        <span style="padding:2px 8px;border-radius:999px;background:var(--amberl);color:var(--amber);font-weight:600">Fields: restricted</span>
+      </div>
+      <!-- Permission bar (Improvement 4 visual) -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+        <div style="flex:1;height:6px;border-radius:999px;background:var(--p100);overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:var(--green);border-radius:999px;transition:width .3s"></div>
+        </div>
+        <span style="font-size:11px;color:var(--green);font-weight:600">${allowed} allowed</span>
+        <span style="font-size:11px;color:var(--g75)">${denied} denied</span>
+      </div>
+      <!-- Brand access dots -->
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        ${BRANDS.slice(0,5).map(b=>{
+          const canSee=(u.scope==='all')||(u.scope==='brand'&&u.brand===b)||(u.scope==='cross-brand'&&(u.brand.includes(b.split(' ')[0])))||(u.scope==='authored'&&u.brand===b);
+          return `<span style="font-size:10.5px;padding:2px 7px;border-radius:999px;background:${canSee?'var(--greenl)':'var(--p50)'};color:${canSee?'var(--green)':'var(--g75)'};display:flex;align-items:center;gap:3px">
+            <span style="font-size:9px">${canSee?'✓':'✕'}</span>${b.split(' ')[0]}
+          </span>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('')
+  : `<div class="card" style="padding:16px;text-align:center"><div style="font-size:13px;color:var(--g75)">No users currently assigned to ${role}</div></div>`;
+
+  return `<div>
+    ${sourcePipeline}
+    <div class="g2" style="gap:18px">
+      <div>${capTable}</div>
+      <div>
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g75);margin-bottom:9px">Users on this role (${roleUsers.length})</div>
+        ${userCards}
       </div>
     </div>
   </div>`;
 }
+
+function togglePerm(el,a){
+  const k=el+':'+a;
+  const base=PM[S.roleDetailSel||S.permRole]||{};
+  const role=S.roleDetailSel||S.permRole;
+  S.permRole=role;
+  const cur=S.permOv[k]!==undefined?S.permOv[k]:!!(base[el]&&base[el][a]);
+  S.permOv[k]=!cur;
+  renderPage();
+}
+
+/* ── STANDALONE PERMISSIONS PAGE (kept, now delegates to role detail) ── */
+function renderPermissions(){
+  // Redirect to role detail view for the selected role
+  S.roleDetailSel=S.permRole;
+  S.rolesView='detail';
+  S.roleDetailTab='permissions';
+  return renderRoleDetail();
+}
+
+/* ── STANDALONE SCOPES PAGE (kept, delegates to role detail context) ── */
+function renderScopes(){
+  S.rolesView='detail';
+  S.roleDetailSel=S.roleDetailSel||'Broker';
+  S.roleDetailTab='scope';
+  return renderRoleDetail();
+}
+
+/* ── STANDALONE FIELDS PAGE (kept, delegates to role detail context) ── */
+function renderFields(){
+  S.rolesView='detail';
+  S.roleDetailSel=S.fieldRole||'Broker';
+  S.roleDetailTab='fields';
+  return renderRoleDetail();
+}
+
 function setFL(f,l){S.fieldFp[f]=l;renderPage();}
 
-/* ── EFFECTIVE ACCESS ── */
+/* ── EFFECTIVE ACCESS — with visual improvements (Improvement 4) ── */
 function renderEffective(){
-  const VB={"Role":{bg:'var(--p100)',co:'var(--p700)'},"Scope":{bg:'var(--p50)',co:'var(--p400)'},"Field visibility":{bg:'var(--p15)',co:'var(--p)'}};
+  const VB={"Role":{bg:'var(--p100)',co:'var(--p700)'},"Scope":{bg:'var(--p50)',co:'var(--p400)'},"Fields":{bg:'var(--amberl)',co:'var(--amber)'},"Field visibility":{bg:'var(--p15)',co:'var(--p)'}};
+
   function cando(u){
     const perms=PM[u.role]||PM['Viewer'];
     const fields=FD[u.role]||FD['Viewer'];
     return[
-      {on:true,t:`View ${u.scope==='brand'?u.brand:u.scope==='authored'?'authored records':'all'} yachts`,via:'Scope',cat:'Data visibility'},
-      {on:!!(perms['Yachts']?.Create),t:'Create new yacht listings',via:'Role',cat:'Yachts'},
-      {on:!!(perms['Yachts']?.Edit),t:'Edit yacht listings',via:'Role',cat:'Yachts'},
-      {on:!!(perms['Yachts']?.Delete),t:'Delete yacht records',via:'Role',cat:'Yachts'},
-      {on:!!(perms['Yachts']?.Export),t:'Export yacht data',via:'Role',cat:'Yachts'},
-      {on:!!(perms['Yacht Lists']?.Share),t:'Share curated lists',via:'Role',cat:'Lists'},
-      {on:!!(perms['Emails']?.Create),t:'Send emails via platform',via:'Role',cat:'Emails'},
-      {on:!!(perms['Sales History']?.View),t:'View sales history',via:'Role',cat:'Sales'},
-      {on:fields['Owner Contact']!=='hidden',t:'See owner contact details',via:'Field visibility',cat:'Sensitive fields'},
-      {on:fields['Commission Terms']!=='hidden',t:'See commission & fee terms',via:'Field visibility',cat:'Sensitive fields'},
-      {on:u.role==='Admin',t:'Manage platform users and roles',via:'Role',cat:'Administration'},
+      {on:true,  t:`View ${u.scope==='brand'?u.brand:u.scope==='authored'?'authored records':'all'} yachts`, via:'Scope', cat:'Data visibility'},
+      {on:!!(perms['Yachts']?.Create), t:'Create new yacht listings', via:'Role',   cat:'Yachts'},
+      {on:!!(perms['Yachts']?.Edit),   t:'Edit yacht listings',       via:'Role',   cat:'Yachts'},
+      {on:!!(perms['Yachts']?.Delete), t:'Delete yacht records',      via:'Role',   cat:'Yachts'},
+      {on:!!(perms['Yachts']?.Export), t:'Export yacht data',         via:'Role',   cat:'Yachts'},
+      {on:!!(perms['Yacht Lists']?.Share), t:'Share curated lists',   via:'Role',   cat:'Lists'},
+      {on:!!(perms['Emails']?.Create), t:'Send emails via platform',  via:'Role',   cat:'Emails'},
+      {on:!!(perms['Sales History']?.View), t:'View sales history',   via:'Role',   cat:'Sales'},
+      {on:fields['Owner Contact']!=='hidden',     t:'See owner contact details', via:'Field visibility', cat:'Sensitive fields'},
+      {on:fields['Commission Terms']!=='hidden',  t:'See commission & fee terms',via:'Field visibility', cat:'Sensitive fields'},
+      {on:u.role==='Admin', t:'Manage platform users and roles', via:'Role', cat:'Administration'},
     ];
   }
+
   const rows=USERS.map((u,ui)=>{
     const isOpen=S.effExp===u.id;
     const cd=cando(u);
     const allowed=cd.filter(c=>c.on).length;
     const denied=cd.filter(c=>!c.on).length;
+    const pct=Math.round((allowed/(allowed+denied))*100);
     const cats=[...new Set(cd.map(c=>c.cat))];
+
+    // Access source pipeline (Improvement 4)
+    const pipeline=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:10px;flex-wrap:wrap">
+      <span style="padding:3px 9px;border-radius:999px;background:var(--p100);color:var(--p700);font-size:11px;font-weight:600">Role: ${u.role}</span>
+      <span style="font-size:12px;color:var(--g75)">→</span>
+      <span style="padding:3px 9px;border-radius:999px;background:var(--p50);color:var(--p400);font-size:11px;font-weight:600">Scope: ${u.scope==='cross-brand'?'Cross-brand':u.scope.charAt(0).toUpperCase()+u.scope.slice(1)}</span>
+      <span style="font-size:12px;color:var(--g75)">→</span>
+      <span style="padding:3px 9px;border-radius:999px;background:var(--amberl);color:var(--amber);font-size:11px;font-weight:600">Field Access: ${Object.values(FD[u.role]||{}).filter(v=>v==='hidden').length} hidden</span>
+      <span style="font-size:12px;color:var(--g75)">→</span>
+      <span style="padding:3px 9px;border-radius:999px;background:var(--greenl);color:var(--green);font-size:11px;font-weight:600">${allowed} allowed / ${denied} denied</span>
+    </div>`;
+
+    // Brand access dots (Improvement 4)
+    const brandDots=BRANDS.slice(0,5).map(b=>{
+      const canSee=(u.scope==='all')||(u.scope==='brand'&&u.brand.includes(b.split(' ')[0]))||(u.scope==='cross-brand'&&u.brand.includes(b.split(' ')[0]));
+      return `<span style="font-size:11px;padding:2px 8px;border-radius:999px;background:${canSee?'var(--greenl)':'var(--p50)'};color:${canSee?'var(--green)':'var(--g75)'};display:inline-flex;align-items:center;gap:3px">
+        <span>${canSee?'✓':'✕'}</span>${b.split(' ')[0]}
+      </span>`;
+    }).join('');
+
     const grid=cats.map(cat=>{
       const items=cd.filter(c=>c.cat===cat);
       return `<div style="background:#fff;border-radius:7px;border:1px solid var(--p150);overflow:hidden">
@@ -1030,8 +1351,20 @@ function renderEffective(){
       <div class="er${isOpen?' open':''}" onclick="S.effExp=S.effExp===${u.id}?null:${u.id};renderPage()">
         <div style="display:flex;align-items:center;gap:9px">
           ${av(u.av,isOpen?30:28)}
-          <div style="min-width:0"><div style="font-size:13px;font-weight:500;color:var(--g11)">${u.name}</div><div style="font-size:11px;color:var(--g75)">${u.email}</div></div>
-          ${!isOpen?`<span style="margin-left:7px;font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--p50);color:var(--p400);flex-shrink:0">${allowed} allowed · ${denied} denied</span>`:''}
+          <div style="min-width:0">
+            <div style="font-size:13px;font-weight:500;color:var(--g11)">${u.name}</div>
+            <div style="font-size:11px;color:var(--g75)">${u.email}</div>
+          </div>
+          ${!isOpen?`
+            <div style="margin-left:8px;display:flex;flex-direction:column;gap:3px">
+              <div style="display:flex;align-items:center;gap:5px">
+                <div style="width:60px;height:4px;border-radius:999px;background:var(--p100);overflow:hidden">
+                  <div style="height:100%;width:${pct}%;background:var(--green);border-radius:999px"></div>
+                </div>
+                <span style="font-size:10.5px;color:var(--green);font-weight:600">${allowed}</span>
+                <span style="font-size:10.5px;color:var(--g75)">${denied}</span>
+              </div>
+            </div>`:''}
           <div style="margin-left:auto;color:var(--g75);font-size:10px;transform:${isOpen?'rotate(180deg)':'rotate(0)'};transition:transform .2s;flex-shrink:0">▾</div>
         </div>
         <div>${roleTag(u.role)}</div>
@@ -1040,14 +1373,20 @@ function renderEffective(){
         <div><span class="tag ${u.status==='active'?'t-ok':'t-wn'}">${u.status}</span></div>
       </div>
       <div class="ep${isOpen?'':' hidden'}">
-        <div style="display:flex;align-items:center;gap:10px;padding:9px 13px;background:#fff;border-radius:7px;border:1px solid var(--p150);margin-bottom:13px">
-          ${av(u.av,34)}
-          <div style="flex:1"><div style="font-weight:600;font-size:13.5px">${u.name}</div>
-          <div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap">${roleTag(u.role)} ${scTag(u.scope)} <span style="font-size:11px;color:var(--g39)">${u.brand}</span></div></div>
-          <div style="display:flex;gap:14px;flex-shrink:0">
-            <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--green);line-height:1">${allowed}</div><div style="font-size:10px;color:var(--g75);margin-top:1px">Allowed</div></div>
-            <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--p300);line-height:1">${denied}</div><div style="font-size:10px;color:var(--g75);margin-top:1px">Denied</div></div>
+        <div style="padding:10px 13px;background:#fff;border-radius:7px;border:1px solid var(--p150);margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            ${av(u.av,34)}
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:13.5px">${u.name}</div>
+              <div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap">${roleTag(u.role)} ${scTag(u.scope)} <span style="font-size:11px;color:var(--g39)">${u.brand}</span></div>
+            </div>
+            <div style="display:flex;gap:14px;flex-shrink:0">
+              <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--green);line-height:1">${allowed}</div><div style="font-size:10px;color:var(--g75);margin-top:1px">Allowed</div></div>
+              <div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--p300);line-height:1">${denied}</div><div style="font-size:10px;color:var(--g75);margin-top:1px">Denied</div></div>
+            </div>
           </div>
+          ${pipeline}
+          <div style="display:flex;gap:5px;flex-wrap:wrap">${brandDots}</div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:9px">${grid}</div>
       </div>
@@ -1055,8 +1394,8 @@ function renderEffective(){
   }).join('');
 
   return `<div class="pg">
-    <div class="pg-hd"><div><div class="pg-t">Effective Access</div><div class="pg-s">Combined result of role + scope + field visibility — click any row to expand</div></div></div>
-    <div class="notice n-i">${ico('info',14,'#1e3a8a')}<span>Expand any user to see exactly what they can and cannot do, and <em>why</em>.</span></div>
+    <div class="pg-hd"><div><div class="pg-t">Effective Access</div><div class="pg-s">Combined result of role + scope + field visibility — what each user can actually do</div></div></div>
+    <div class="notice n-i">${ico('info',13,'#1e3a8a')}<span>Each row shows the <strong>Access Source Pipeline</strong>: Role → Scope → Field Access → Effective result. Expand any user for the full breakdown.</span></div>
     <div class="card" style="overflow:hidden;padding:0">
       <div style="display:grid;grid-template-columns:1fr 120px 120px 86px 76px;padding:8px 13px;background:var(--p50);border-bottom:2px solid var(--p150)">
         ${['User','Role','Scope','Brand','Status'].map(h=>`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g39)">${h}</div>`).join('')}
@@ -1066,22 +1405,125 @@ function renderEffective(){
   </div>`;
 }
 
-/* ── IMPACT ── */
+/* ── ROLE COMPARISON PANEL (Improvement 3) — modal drawer ── */
+function renderComparePanel(){
+  const roles=S.compareRoles;
+  const ALL_ROLES=ROLES.map(r=>r.name);
+
+  const CAPS=[
+    {label:'View Yachts',         fn:(r)=>!!(PM[r]?.['Yachts']?.View)},
+    {label:'Create Yachts',       fn:(r)=>!!(PM[r]?.['Yachts']?.Create)},
+    {label:'Edit Yachts',         fn:(r)=>!!(PM[r]?.['Yachts']?.Edit)},
+    {label:'Delete Yachts',       fn:(r)=>!!(PM[r]?.['Yachts']?.Delete)},
+    {label:'Export Data',         fn:(r)=>!!(PM[r]?.['Yachts']?.Export)},
+    {label:'Share Lists',         fn:(r)=>!!(PM[r]?.['Yacht Lists']?.Share)},
+    {label:'Send Emails',         fn:(r)=>!!(PM[r]?.['Emails']?.Create)},
+    {label:'View Sales History',  fn:(r)=>!!(PM[r]?.['Sales History']?.View)},
+    {label:'Access Charter Info', fn:(r)=>!!(PM[r]?.['Charter Info']?.View)},
+    {label:'See Owner Contact',   fn:(r)=>(FD[r]?.['Owner Contact']||'hidden')!=='hidden'},
+    {label:'See Price History',   fn:(r)=>(FD[r]?.['Price History']||'hidden')!=='hidden'},
+    {label:'See Commission',      fn:(r)=>(FD[r]?.['Commission Terms']||'hidden')!=='hidden'},
+    {label:'Manage Users',        fn:(r)=>r==='Admin'},
+    {label:'Audit Log Access',    fn:(r)=>r==='Admin'},
+  ];
+
+  const scopeDefault={Admin:'all',Broker:'brand','Listing Manager':'brand',Analyst:'cross-brand','Support Agent':'brand',Viewer:'authored'};
+
+  const colHeaders=roles.map(r=>`<th style="padding:10px 14px;text-align:center;background:var(--p25);border-left:1px solid var(--p150);border-bottom:2px solid var(--p150);min-width:100px">
+    <div>${roleTag(r)}</div>
+    <div style="font-size:10px;color:var(--g75);margin-top:3px">${ROLES.find(x=>x.name===r)?.users||0} users</div>
+  </th>`).join('');
+
+  // Group caps into sections
+  const sections=[
+    {label:'Yacht Actions', caps:CAPS.slice(0,6)},
+    {label:'Communication & Export', caps:CAPS.slice(6,9)},
+    {label:'Sensitive Fields', caps:CAPS.slice(9,12)},
+    {label:'Administration', caps:CAPS.slice(12)},
+  ];
+
+  let tableRows='';
+  sections.forEach(sec=>{
+    tableRows+=`<tr><td colspan="${roles.length+1}" style="padding:7px 14px;background:var(--p50);border-top:1px solid var(--p150);border-bottom:1px solid var(--p150)">
+      <span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--g39)">${sec.label}</span>
+    </td></tr>`;
+    sec.caps.forEach(cap=>{
+      tableRows+=`<tr style="border-bottom:1px solid var(--p150)">
+        <td style="padding:8px 14px;font-size:13px;color:var(--g11)">${cap.label}</td>
+        ${roles.map(r=>{
+          const has=cap.fn(r);
+          return `<td style="padding:8px 14px;text-align:center;border-left:1px solid var(--p150)">
+            <span style="display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:${has?'var(--greenl)':'var(--redl)'};color:${has?'var(--green)':'var(--red)'}">
+              ${has?'✓':'✕'}
+            </span>
+          </td>`;
+        }).join('')}
+      </tr>`;
+    });
+  });
+
+  // Scope row
+  tableRows+=`<tr><td colspan="${roles.length+1}" style="padding:7px 14px;background:var(--p50);border-top:1px solid var(--p150);border-bottom:1px solid var(--p150)"><span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--g39)">Data Scope</span></td></tr>`;
+  tableRows+=`<tr style="border-bottom:1px solid var(--p150)"><td style="padding:8px 14px;font-size:13px;color:var(--g11)">Default Scope Level</td>
+    ${roles.map(r=>`<td style="padding:8px 14px;text-align:center;border-left:1px solid var(--p150)">${scTag(scopeDefault[r]||'brand')}</td>`).join('')}
+  </tr>`;
+
+  const roleSelects=roles.map((r,i)=>`
+    <select class="sel" style="height:28px;font-size:12px" onchange="S.compareRoles[${i}]=this.value;renderPage()">
+      ${ALL_ROLES.map(rn=>`<option value="${rn}"${rn===r?' selected':''}>${rn}</option>`).join('')}
+    </select>`).join('');
+
+  return `
+    <!-- Compare panel overlay -->
+    <div style="position:fixed;inset:0;background:rgba(30,26,23,.35);z-index:600;display:flex;align-items:flex-end" onclick="if(event.target===this){S.compareOpen=false;renderPage()}">
+      <div style="background:#fff;width:100%;max-height:80vh;border-radius:14px 14px 0 0;overflow:hidden;display:flex;flex-direction:column" onclick="event.stopPropagation()">
+        <div style="padding:14px 20px;border-bottom:1px solid var(--p150);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <div>
+            <div style="font-size:15px;font-weight:600;color:var(--g11)">Role Comparison</div>
+            <div style="font-size:12px;color:var(--g39);margin-top:1px">Select roles to compare side-by-side</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${roleSelects}
+            <button onclick="S.compareOpen=false;renderPage()" style="width:30px;height:30px;border-radius:7px;border:1px solid var(--p150);background:#fff;cursor:pointer;font-size:16px;color:var(--g75);display:flex;align-items:center;justify-content:center">✕</button>
+          </div>
+        </div>
+        <div style="overflow-y:auto;flex:1">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="padding:10px 14px;background:var(--p25);border-bottom:2px solid var(--p150);text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--g39);position:sticky;top:0;z-index:2">Capability</th>
+              ${colHeaders}
+            </tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+
+/* ── IMPACT ANALYSIS ── */
 function renderImpact(){
   const app=S.impApplied;
-  const stats=[{n:'23',l:'Users affected',c:'var(--red)'},{n:'12',l:'Gain export rights',c:'var(--amber)'},{n:'28',l:'Lose email access',c:'var(--amber)'},{n:'0',l:'Brand isolation broken',c:'var(--green)'}];
+  const stats=[
+    {n:'23',l:'Users affected',       c:'var(--red)'},
+    {n:'12',l:'Gain export rights',   c:'var(--amber)'},
+    {n:'28',l:'Lose email access',    c:'var(--amber)'},
+    {n:'0', l:'Brand isolation broken',c:'var(--green)'},
+  ];
   const impacts=[
-    {lv:'d',ic:'✕',ic_c:'var(--red)',   bg:'var(--redl)',  bd:'#fecaca',t:'23 users gain Delete on Yachts',     d:'All current Broker-role users will inherit this permission.',af:23},
-    {lv:'w',ic:'!', ic_c:'var(--amber)',bg:'var(--amberl)',bd:'#fde68a',t:'28 users lose Emails entity access', d:'Brokers will no longer send platform email campaigns.',af:28},
-    {lv:'w',ic:'!', ic_c:'var(--amber)',bg:'var(--amberl)',bd:'#fde68a',t:'12 users gain Export on Yacht Lists',d:'These users can export curated client lists to PDF and CSV.',af:12},
-    {lv:'o',ic:'✓',ic_c:'var(--green)', bg:'var(--greenl)',bd:'#a7f3d0',t:'No new cross-brand visibility',     d:'Brand isolation is fully preserved. No user will see outside their brokerage.',af:0},
-    {lv:'o',ic:'✓',ic_c:'var(--green)', bg:'var(--greenl)',bd:'#a7f3d0',t:'Owner contacts remain confidential', d:'Field visibility rules unchanged. Owner Name stays hidden.',af:0},
+    {ic:'✕',ic_c:'var(--red)',   bg:'var(--redl)',  bd:'#fecaca',t:'23 users gain Delete on Yachts',      d:'All current Broker-role users will inherit this permission.',af:23},
+    {ic:'!', ic_c:'var(--amber)',bg:'var(--amberl)',bd:'#fde68a',t:'28 users lose Emails entity access',  d:'Brokers will no longer send platform email campaigns.',af:28},
+    {ic:'!', ic_c:'var(--amber)',bg:'var(--amberl)',bd:'#fde68a',t:'12 users gain Export on Yacht Lists', d:'These users can export curated client lists to PDF and CSV.',af:12},
+    {ic:'✓',ic_c:'var(--green)', bg:'var(--greenl)',bd:'#a7f3d0',t:'No new cross-brand visibility',      d:'Brand isolation fully preserved.',af:0},
+    {ic:'✓',ic_c:'var(--green)', bg:'var(--greenl)',bd:'#a7f3d0',t:'Owner contacts remain confidential',  d:'Field visibility rules unchanged.',af:0},
   ];
   const affRows=USERS.filter(u=>u.role==='Broker').map(u=>`<tr>
     <td><div style="display:flex;align-items:center;gap:8px">${av(u.av,25)}<div><div class="tpri">${u.name}</div><div style="font-size:11px;color:var(--g75)">${u.brand}</div></div></div></td>
-    <td>${roleTag('Broker')}</td><td><span class="tag t-wn">Elevated</span></td>
+    <td>${roleTag('Broker')}</td>
+    <td><span class="tag t-wn">Elevated</span></td>
     <td style="font-size:12px;color:var(--g39)">+Delete Yachts · +Export Lists · −Emails</td>
   </tr>`).join('');
+
   return `<div class="pg">
     <div class="pg-hd">
       <div><div class="pg-t">Impact Analysis</div><div class="pg-s">Review downstream effects before applying changes</div></div>
@@ -1090,8 +1532,8 @@ function renderImpact(){
         <button class="btn bp" ${app?'disabled':''} onclick="S.impApplied=true;renderPage()">${app?'Applied ✓':'Apply Changes'}</button>
       </div>
     </div>
-    ${app?`<div class="notice n-ok">${ico('check',14,'var(--green)')}<span>Changes applied. 31 users updated.</span></div>`:''}
-    ${!app?`<div class="notice n-w">${ico('impact',14,'var(--amber)')}<span>You have <strong>2 pending role changes</strong> not yet applied.</span></div>`:''}
+    ${app?`<div class="notice n-ok">${ico('check',13,'var(--green)')}<span>Changes applied. 31 users updated.</span></div>`:''}
+    ${!app?`<div class="notice n-w">${ico('impact',13,'var(--amber)')}<span>You have <strong>2 pending role changes</strong> not yet applied.</span></div>`:''}
     <div class="g4" style="margin-bottom:18px">
       ${stats.map(s=>`<div style="background:#fff;border:1px solid var(--p150);border-radius:9px;padding:14px 16px;border-top:3px solid ${s.c}">
         <div style="font-size:24px;font-weight:800;color:${s.c};line-height:1">${s.n}</div>
@@ -1129,16 +1571,16 @@ function renderImpact(){
   </div>`;
 }
 
-/* ── AUDIT ── */
+/* ── AUDIT LOG ── */
 function renderAudit(){
   const entries=[
-    {type:'role',      txt:'Role assigned',            user:'Penelope Cruz',  detail:'Viewer → Broker',                  by:'James Smith',   time:'2h ago'},
-    {type:'permission',txt:'Permission modified',      user:'—',              detail:'Broker: Delete added to Yachts',    by:'James Smith',   time:'3h ago'},
-    {type:'invite',    txt:'User invited',             user:'Sarah Mitchell', detail:'Invited as Broker, Fraser scope',   by:'James Smith',   time:'2d ago'},
-    {type:'scope',     txt:'Scope changed',            user:'Akachi Adimora', detail:'Brand → Cross-brand',               by:'Ricardo M.',    time:'4d ago'},
-    {type:'access',    txt:'Access revoked',           user:'Elena Vasquez',  detail:'List sharing revoked',              by:'James Smith',   time:'5d ago'},
-    {type:'role',      txt:'Role created',             user:'—',              detail:"New role 'Listing Manager'",         by:'James Smith',   time:'6d ago'},
-    {type:'field',     txt:'Field visibility changed', user:'—',              detail:'Broker: Owner Contact → hidden',    by:'James Smith',   time:'1w ago'},
+    {type:'role',      txt:'Role assigned',            user:'Penelope Cruz',  detail:'Viewer → Broker',                by:'James Smith',   time:'2h ago'},
+    {type:'permission',txt:'Permission modified',      user:'—',              detail:'Broker: Delete added to Yachts', by:'James Smith',   time:'3h ago'},
+    {type:'invite',    txt:'User invited',             user:'Sarah Mitchell', detail:'Invited as Broker, Fraser scope', by:'James Smith',   time:'2d ago'},
+    {type:'scope',     txt:'Scope changed',            user:'Akachi Adimora', detail:'Brand → Cross-brand',             by:'Ricardo M.',    time:'4d ago'},
+    {type:'access',    txt:'Access revoked',           user:'Elena Vasquez',  detail:'List sharing revoked',            by:'James Smith',   time:'5d ago'},
+    {type:'role',      txt:'Role created',             user:'—',              detail:"New role 'Listing Manager'",      by:'James Smith',   time:'6d ago'},
+    {type:'field',     txt:'Field visibility changed', user:'—',              detail:'Broker: Owner Contact → hidden',  by:'James Smith',   time:'1w ago'},
   ];
   const tc={role:'var(--blue)',permission:'var(--amber)',invite:'var(--green)',scope:'var(--p)',access:'var(--red)',field:'var(--p400)'};
   return `<div class="pg">
@@ -1159,7 +1601,6 @@ function renderAudit(){
   </div>`;
 }
 
-/* ════ YIQ MODALS ════ */
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
 
 function openUModal(uid){S.uModalId=uid;S.uModalTab='overview';renderUModal();document.getElementById('m-user').classList.remove('hidden');}
@@ -1167,40 +1608,81 @@ function renderUModal(){
   const u=USERS.find(x=>x.id===S.uModalId); if(!u) return;
   const perms=PM[u.role]||PM['Viewer'];
   const fields=FD[u.role]||FD['Viewer'];
+  const sd=SCOPES_DEF[u.scope]||SCOPES_DEF.brand;
+
+  function dataAccessRows(user){
+    return BRANDS.slice(0,5).map(b=>{
+      const canSee=(user.scope==='all')
+        ||(user.scope==='brand'&&user.brand.includes(b.split(' ')[0]))
+        ||(user.scope==='cross-brand'&&user.brand.includes(b.split(' ')[0]));
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--p150)">
+        <div style="width:16px;height:16px;border-radius:50%;background:${canSee?'var(--greenl)':'var(--p50)'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${canSee?'var(--green)':'var(--g75)'};flex-shrink:0">${canSee?'✓':'✕'}</div>
+        <span style="font-size:12.5px;color:${canSee?'var(--g11)':'var(--g75)'};${canSee?'':'text-decoration:line-through'}">${b}</span>
+        ${canSee?'':'<span style="font-size:10px;color:var(--g75);margin-left:auto">No access</span>'}
+      </div>`;
+    }).join('');
+  }
+
   let body='';
   if(S.uModalTab==='overview'){
     const eff=[
-      {on:true,t:`View ${u.scope==='brand'?u.brand:'all'} yachts`},
-      {on:!!(perms['Yachts']?.Edit),t:'Edit yacht listings'},
-      {on:!!(perms['Yachts']?.Create),t:'Create yacht listings'},
-      {on:!!(perms['Yachts']?.Delete),t:'Delete yacht records'},
-      {on:fields['Owner Contact']!=='hidden',t:'See owner contact details'},
-      {on:!!(perms['Yacht Lists']?.Share),t:'Share lists with clients'},
-      {on:!!(perms['Emails']?.Create),t:'Send emails via platform'},
-      {on:u.role==='Admin',t:'Manage users and roles'},
+      {on:true,  t:`View ${u.scope==='brand'?u.brand:u.scope==='authored'?'authored records':'all'} yachts`},
+      {on:!!(perms['Yachts']?.Edit),   t:'Edit yacht listings'},
+      {on:!!(perms['Yachts']?.Create), t:'Create yacht listings'},
+      {on:!!(perms['Yachts']?.Delete), t:'Delete yacht records'},
+      {on:fields['Owner Contact']!=='hidden', t:'See owner contact details'},
+      {on:!!(perms['Yacht Lists']?.Share), t:'Share lists with clients'},
+      {on:!!(perms['Emails']?.Create), t:'Send emails via platform'},
+      {on:u.role==='Admin', t:'Manage users and roles'},
     ];
-    body=`<div class="g2" style="gap:14px">
-      <div>
-        <div class="fg"><label>Role</label><div style="margin-top:5px">${roleTag(u.role)}</div></div>
-        <div class="fg"><label>Data Scope</label><div style="margin-top:5px">${scTag(u.scope)}</div></div>
-        <div class="fg"><label>Brand Access</label><div style="margin-top:5px;font-size:13px">${u.brand}</div></div>
-        <div class="fg"><label>Status</label><div style="margin-top:5px"><span class="tag ${u.status==='active'?'t-ok':'t-wn'}">${u.status}</span></div></div>
-      </div>
-      <div>
-        <div style="font-weight:500;font-size:13px;margin-bottom:9px">Access Summary</div>
-        <div class="card" style="padding:4px 12px">
-          ${eff.map(p=>`<div class="pr">
-            <div style="width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;background:${p.on?'var(--greenl)':'var(--p50)'};color:${p.on?'var(--green)':'var(--g75)'}">${p.on?'✓':'–'}</div>
-            <span style="flex:1;font-size:13px;color:${p.on?'var(--g11)':'var(--g75)'}">${p.t}</span>
-          </div>`).join('')}
+    body=`
+      <div style="display:flex;gap:8px;margin-bottom:16px;padding:12px 14px;background:var(--p25);border-radius:9px;border:1px solid var(--p150);flex-wrap:wrap;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:100px">
+          <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g75)">Role</div>
+          ${roleTag(u.role)}
+          <div style="font-size:10.5px;color:var(--g39);margin-top:1px">${ROLES.find(r=>r.name===u.role)?.desc||''}</div>
+        </div>
+        <div style="width:1px;background:var(--p200);align-self:stretch;flex-shrink:0;margin:0 4px"></div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:100px">
+          <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g75)">Brand</div>
+          <div style="font-size:13px;font-weight:500;color:var(--g11)">${u.brand}</div>
+        </div>
+        <div style="width:1px;background:var(--p200);align-self:stretch;flex-shrink:0;margin:0 4px"></div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px">
+          <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g75)">Data Scope</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="sc-chip ${sd.cls}">${sd.lb}</span>
+            <select class="sel" style="height:24px;font-size:11px;border-color:var(--p150)" onchange="USERS.find(x=>x.id===${u.id}).scope=this.value;renderUModal()">
+              ${SCOPE_IDS.map(s=>`<option value="${s}"${s===u.scope?' selected':''}>${SCOPES_DEF[s].lb}</option>`).join('')}
+            </select>
+          </div>
+          <div style="font-size:10.5px;color:var(--g39);line-height:1.4">${sd.desc}</div>
         </div>
       </div>
-    </div>`;
+      <div class="g2" style="gap:14px">
+        <div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--g39);margin-bottom:8px;display:flex;align-items:center;gap:6px">${ico('scopes',13,'var(--p)')} Data Access</div>
+          <div class="card" style="padding:8px 12px">${dataAccessRows(u)}</div>
+          <div style="margin-top:8px;padding:8px 11px;background:var(--p50);border-radius:7px;border-left:3px solid var(--p150)">
+            <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g75);margin-bottom:3px">Why these brands?</div>
+            <div style="font-size:11.5px;color:var(--g39);line-height:1.5">${sd.desc}</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--g39);margin-bottom:8px;display:flex;align-items:center;gap:6px">${ico('permissions',13,'var(--p)')} Capabilities</div>
+          <div class="card" style="padding:4px 12px">
+            ${eff.map(p=>`<div class="pr">
+              <div style="width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;background:${p.on?'var(--greenl)':'var(--p50)'};color:${p.on?'var(--green)':'var(--g75)'}">${p.on?'✓':'–'}</div>
+              <span style="flex:1;font-size:12.5px;color:${p.on?'var(--g11)':'var(--g75)'}">${p.t}</span>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
   } else if(S.uModalTab==='permissions'){
     const mrows=ENTITIES.map(en=>`<tr><td style="font-size:13px;font-weight:500;color:var(--g11)">${en.label}</td>
       ${ACTIONS.map(a=>{const h=!!((perms[en.label]||{})[a]);return `<td style="text-align:center"><span style="display:inline-flex;width:19px;height:19px;border-radius:5px;align-items:center;justify-content:center;font-size:10px;font-weight:700" class="${h?'m-on':'m-off'}">${h?'✓':'–'}</span></td>`;}).join('')}
     </tr>`).join('');
-    body=`<div class="notice n-i" style="margin-bottom:14px">${ico('info',13,'#1e3a8a')}<span>Inherited from <strong>${u.role}</strong> role.</span></div>
+    body=`<div class="notice n-i" style="margin-bottom:14px">${ico('info',13,'#1e3a8a')}<span>Inherited from <strong>${u.role}</strong> role. To change capabilities, edit the role in Settings → Roles.</span></div>
     <div style="overflow-x:auto"><table style="border:1px solid var(--p150);border-radius:9px;overflow:hidden">
       <thead><tr style="background:var(--p50)"><th>Entity</th>${ACTIONS.map(a=>`<th style="text-align:center">${a}</th>`).join('')}</tr></thead>
       <tbody>${mrows}</tbody>
@@ -1219,7 +1701,10 @@ function renderUModal(){
     <div class="md md-lg" onclick="event.stopPropagation()">
       <div class="md-hd">
         <div style="display:flex;align-items:center;gap:9px">${av(u.av)}<div><div class="md-t">${u.name}</div><div style="font-size:12px;color:var(--g39)">${u.email}</div></div></div>
-        <button class="md-x" onclick="closeModal('m-user')">✕</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="tag ${u.status==='active'?'t-ok':'t-wn'}">${u.status}</span>
+          <button class="md-x" onclick="closeModal('m-user')">✕</button>
+        </div>
       </div>
       <div class="md-b">
         <div class="tabs">${['overview','permissions','fields'].map(t=>`<div class="tab${S.uModalTab===t?' on':''}" onclick="S.uModalTab='${t}';renderUModal()" style="text-transform:capitalize">${t}</div>`).join('')}</div>
@@ -1227,7 +1712,7 @@ function renderUModal(){
       </div>
       <div class="md-ft">
         <button class="btn bd bsm">Revoke Access</button>
-        <div style="display:flex;gap:7px"><button class="btn bs" onclick="closeModal('m-user')">Close</button><button class="btn bp">Edit Assignment</button></div>
+        <div style="display:flex;gap:7px"><button class="btn bs" onclick="closeModal('m-user')">Close</button><button class="btn bp">Save Changes</button></div>
       </div>
     </div>`;
   document.getElementById('m-user').onclick=function(e){if(e.target===this)closeModal('m-user');};
@@ -1235,16 +1720,82 @@ function renderUModal(){
 
 function openInvite(){S.invStep=0;renderInvite();document.getElementById('m-invite').classList.remove('hidden');}
 function renderInvite(){
-  const st=S.invStep; const steps=['Identity','Role & Scope','Review'];
+  const st=S.invStep;
+  const steps=['Identity','Role & Scope','Review'];
   const dots=steps.map((s,i)=>`<div style="display:flex;align-items:center">${i>0?'<div class="s-ln"></div>':''}<div class="st-${i<st?'dn':i===st?'ac':'td'}" style="display:flex;align-items:center"><div class="sd">${i<st?'✓':i+1}</div><span class="sl">${s}</span></div></div>`).join('');
   let body='';
-  if(st===0) body=`<div class="fg"><label>Full Name *</label><input class="inp" placeholder="e.g. Sarah Mitchell"/></div><div class="fg"><label>Work Email *</label><input class="inp" placeholder="sarah@brokerage.com"/></div><div class="g2"><div class="fg"><label>Phone</label><input class="inp" placeholder="+1 555 000-0000"/></div><div class="fg"><label>Company</label><input class="inp" placeholder="Brokerage name"/></div></div>`;
-  else if(st===1) body=`<div class="fg"><label>Role</label><div style="display:flex;flex-direction:column;gap:7px;margin-top:7px">${ROLES.map(r=>`<div onclick="S.invRole='${r.id}';renderInvite()" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid ${S.invRole===r.id?'var(--p)':'var(--p200)'};border-radius:7px;cursor:pointer;background:${S.invRole===r.id?'var(--p25)':'#fff'};transition:all .12s">
-      <div style="width:14px;height:14px;border-radius:50%;border:2px solid ${S.invRole===r.id?'var(--p)':'var(--g75)'};background:${S.invRole===r.id?'var(--p)':'transparent'};flex-shrink:0;margin-top:2px;transition:all .12s"></div>
-      <div><div style="display:flex;align-items:center;gap:7px;margin-bottom:2px">${roleTag(r.name)}</div><div style="font-size:11px;color:var(--g39)">${r.desc.substring(0,55)}…</div></div>
-    </div>`).join('')}</div></div>`;
-  else body=`<div class="notice n-i">Invitation email will be sent. Link expires in 72 hours.</div>
-    <div class="card" style="padding:12px 16px">${[['Role',roleTag(ROLES.find(r=>r.id===S.invRole)?.name||'')],['Scope',scTag(S.invScope)]].map(([l,v])=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--p150)"><span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--g39);width:50px;flex-shrink:0">${l}</span>${v}</div>`).join('')}</div>`;
+
+  if(st===0){
+    body=`<div class="fg"><label>Full Name *</label><input class="inp" placeholder="e.g. Sarah Mitchell"/></div>
+      <div class="fg"><label>Work Email *</label><input class="inp" placeholder="sarah@brokerage.com"/></div>
+      <div class="g2">
+        <div class="fg"><label>Phone</label><input class="inp" placeholder="+1 555 000-0000"/></div>
+        <div class="fg"><label>Company</label><input class="inp" placeholder="Brokerage name"/></div>
+      </div>`;
+  } else if(st===1){
+    const roleObj=ROLES.find(r=>r.id===S.invRole)||ROLES[1];
+    const scopeDef=SCOPES_DEF[S.invScope]||SCOPES_DEF.brand;
+    body=`
+      <!-- Role selector -->
+      <div class="fg">
+        <label>Role</label>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:7px">
+          ${ROLES.map(r=>`<div onclick="S.invRole='${r.id}';renderInvite()" style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border:1px solid ${S.invRole===r.id?'var(--p)':'var(--p200)'};border-radius:7px;cursor:pointer;background:${S.invRole===r.id?'var(--p25)':'#fff'};transition:all .12s">
+            <div style="width:14px;height:14px;border-radius:50%;border:2px solid ${S.invRole===r.id?'var(--p)':'var(--g75)'};background:${S.invRole===r.id?'var(--p)':'transparent'};flex-shrink:0;margin-top:2px;transition:all .12s"></div>
+            <div><div style="display:flex;align-items:center;gap:7px;margin-bottom:2px">${roleTag(r.name)}</div><div style="font-size:11px;color:var(--g39)">${r.desc.substring(0,60)}…</div></div>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="dvd"></div>
+
+      <!-- Brand -->
+      <div class="fg">
+        <label>Brand <span style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--g75)">— which brokerage this user belongs to</span></label>
+        <select class="sel w100" style="width:100%;height:34px;margin-top:6px">
+          ${BRANDS.map(b=>`<option>${b}</option>`).join('')}
+        </select>
+      </div>
+
+      <!-- Data Scope — with live explanation -->
+      <div class="fg">
+        <label>Data Scope <span style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--g75)">— which records they can see</span></label>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:7px">
+          ${SCOPE_IDS.map(s=>{
+            const sd=SCOPES_DEF[s];
+            const on=S.invScope===s;
+            return `<div onclick="S.invScope='${s}';renderInvite()" style="padding:10px 13px;border:1px solid ${on?'var(--p)':'var(--p200)'};border-radius:7px;cursor:pointer;background:${on?'var(--p25)':'#fff'};transition:all .12s">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:${on?6:0}px">
+                <div style="width:14px;height:14px;border-radius:50%;border:2px solid ${on?'var(--p)':'var(--g75)'};background:${on?'var(--p)':'transparent'};flex-shrink:0;transition:all .12s"></div>
+                <span class="sc-chip ${sd.cls}">${sd.lb}</span>
+                <span style="font-size:11px;color:var(--g75)">${sd.short}</span>
+              </div>
+              ${on?`<div style="font-size:11.5px;color:var(--g39);line-height:1.5;padding-left:22px">${sd.desc}</div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;padding-left:22px;margin-top:6px">
+                ${sd.can.slice(0,2).map(x=>`<span style="font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--greenl);color:var(--green);display:flex;align-items:center;gap:3px">✓ ${x}</span>`).join('')}
+                ${sd.cannot.slice(0,1).map(x=>`<span style="font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--p50);color:var(--g75);display:flex;align-items:center;gap:3px">✕ ${x}</span>`).join('')}
+              </div>`:''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  } else {
+    // Review step
+    const roleObj=ROLES.find(r=>r.id===S.invRole)||ROLES[1];
+    const sd=SCOPES_DEF[S.invScope]||SCOPES_DEF.brand;
+    body=`<div class="notice n-i" style="margin-bottom:14px">Invitation email will be sent. The link expires in 72 hours.</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      ${[
+        ['Role',   roleTag(roleObj.name)],
+        ['Brand',  `<span style="font-size:13px;color:var(--g11)">Fraser Yachts (selected)</span>`],
+        ['Data Scope', `<div><span class="sc-chip ${sd.cls}">${sd.lb}</span><div style="font-size:11px;color:var(--g39);margin-top:3px">${sd.desc}</div></div>`],
+      ].map(([l,v])=>`<div style="display:flex;align-items:flex-start;gap:12px;padding:11px 14px;border-bottom:1px solid var(--p150)">
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g39);width:72px;flex-shrink:0;padding-top:2px">${l}</span>
+        <div>${v}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
   document.getElementById('m-invite').innerHTML=`
     <div class="md" onclick="event.stopPropagation()">
       <div class="md-hd"><span class="md-t">Invite New User</span><button class="md-x" onclick="closeModal('m-invite')">✕</button></div>
@@ -1291,13 +1842,9 @@ const BY_NAV=[
   {id:'by-costing',  lb:'Costing',   ic:'co',  subs:[]},
   {id:'by-companies',lb:'Companies', ic:'cm',  subs:[]},
   {id:'by-documents',lb:'Documents', ic:'dc',  subs:[]},
+  {id:'by-settings', lb:'Settings',  ic:'st',  subs:[{id:'by-roles',lb:'Roles & Permissions'}]},
 ];
-const BY_SETT=[
-  {id:'by-users',   lb:'Team & Users',    ic:'us'},
-  {id:'by-roles',   lb:'Roles',           ic:'rl'},
-  {id:'by-invites', lb:'Pending Invites', ic:'iv'},
-  {id:'by-settings',lb:'Account Settings',ic:'st'},
-];
+const BY_SETT=[];
 function byIco(n,sz=16,c='#8796a8'){
   const s=`width:${sz}px;height:${sz}px;display:block;flex-shrink:0`;
   const p=`fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"`;
@@ -1367,8 +1914,11 @@ function byNav(id){S.byPage=id;renderBySB();renderByPage();}
 function renderByPage(){
   const el=document.getElementById('by-pc'); if(!el) return;
   const pages={
-    'by-models':byModels,'by-users':byUsers,'by-roles':byRoles,
-    'by-invites':byInvites,'by-settings':bySettings,
+    'by-models':byModels,
+    'by-companies':byCompanies,
+    'by-roles':byRolesPage,
+    'by-settings':(()=>''),
+    'by-companies-list':(()=>''),'by-integrations':(()=>''),
   };
   el.innerHTML=(pages[S.byPage]||(()=>''))();
 }
@@ -1449,59 +1999,238 @@ function byUsers(){
     </div>
   </div>`;
 }
-function byRoles(){
-  const sel=S.byRolesSel; const perms=S.byRolesP;
-  const grps=[...new Set(BY_FEATS.map(f=>f.g))];
-  const aC={none:{bg:'#f4f6f9',co:'#8796a8'},view:{bg:'#e8f4f8',co:'#1a7fa8'},full:{bg:'#e6f4ec',co:'#1a8a4a'}};
-  const aL={none:'No access',view:'View only',full:'Full access'};
-  const roleCards=BY_ROLES.map(r=>{
-    const on=sel===r.name;
-    return `<div onclick="S.byRolesSel='${r.name}';S.byRolesP={...BY_PM['${r.name}']};renderByPage()" style="display:flex;align-items:center;gap:10px;padding:11px 13px;background:${on?'#1a7fa8':'#fff'};border:1px solid ${on?'#1a7fa8':'#e2e6ed'};border-radius:7px;cursor:pointer;transition:all .13s;margin-bottom:5px">
-      <span class="by-tag ${r.cls}">${r.name}</span>
-      <span style="font-size:12px;color:${on?'rgba(255,255,255,.75)':'#8796a8'};flex:1">${r.users} users</span>
-      ${on?`<svg width="13" height="13" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><polyline points="2,6.5 5.5,10 11,4"/></svg>`:''}
-    </div>`;
-  }).join('');
-  const featGrps=grps.map(g=>{
-    const feats=BY_FEATS.filter(f=>f.g===g);
-    return `<div class="by-card" style="margin-bottom:10px;overflow:hidden;padding:0">
-      <div style="padding:8px 14px;background:#f7f9fc;border-bottom:1px solid #e2e6ed;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#8796a8">${g}</div>
-      <div style="padding:2px 14px">
-        ${feats.map(ft=>{
-          const lv=perms[ft.id]||'none';
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #edf0f5">
-            <div style="flex:1;margin-right:14px"><div style="font-size:13px;color:#1a2332">${ft.label}</div><div style="font-size:11.5px;color:#8796a8;margin-top:1px">${ft.desc}</div></div>
-            <div style="display:flex;align-items:center;gap:7px">
-              <span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;background:${aC[lv].bg};color:${aC[lv].co}">${aL[lv]}</span>
-              <button class="by-tgl ${lv!=='none'?'on':'off'}" onclick="S.byRolesP['${ft.id}']=S.byRolesP['${ft.id}']==='none'?'view':S.byRolesP['${ft.id}']==='view'?'full':'none';renderByPage()"></button>
-            </div>
-          </div>`;
-        }).join('')}
+function byCompanies(){
+  const tab=S.byCompaniesTab||'company';
+  const TABS=[
+    {id:'company',      lb:'Company'},
+    {id:'branding',     lb:'Branding'},
+    {id:'marketplaces', lb:'Marketplaces'},
+    {id:'integrations', lb:'Integrations'},
+    {id:'settings',     lb:'Settings'},
+    {id:'users',        lb:'Users'},
+    {id:'dealerships',  lb:'Dealerships'},
+    {id:'custom-lists', lb:'Custom Lists'},
+  ];
+
+  const tabBar=`<div style="display:flex;border-bottom:2px solid var(--by-border);margin-bottom:0;overflow-x:auto;flex-shrink:0">
+    ${TABS.map(t=>`<div onclick="S.byCompaniesTab='${t.id}';renderByPage()"
+      style="padding:10px 16px;font-size:13.5px;cursor:pointer;white-space:nowrap;color:${tab===t.id?'var(--by-teal)':'var(--by-mid)'};font-weight:${tab===t.id?600:400};border-bottom:2px solid ${tab===t.id?'var(--by-teal)':'transparent'};margin-bottom:-2px;transition:all .12s">
+      ${t.lb}
+    </div>`).join('')}
+  </div>`;
+
+  let content='';
+  if(tab==='company'){
+    content=`<div style="padding:28px 0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+        <div style="font-size:18px;font-weight:600;color:var(--by-dark)">Company Information</div>
+        <button class="by-btn by-bp">Edit</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 40px">
+        ${[['COMPANY NAME','jpfahCwQ3v'],['COMPANY EMAIL','N/A'],['COUNTRY','US'],['SALES MANAGER','N/A'],['CURRENCY','USD'],['MEASUREMENT SYSTEM','Imperial']].map(([l,v])=>`
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--by-mid);margin-bottom:4px">${l}</div>
+            <div style="font-size:14px;color:var(--by-dark)">${v}</div>
+          </div>`).join('')}
       </div>
     </div>`;
-  }).join('');
-  return `<div class="by-pg">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-      <div><div class="by-pt">Roles & Permissions</div><div class="by-ps">Define what each role can access across Boatyard Sales</div></div>
-      <div style="display:flex;gap:7px"><button class="by-btn by-bs">+ New Role</button><button class="by-btn by-bp">Save Changes</button></div>
+  } else {
+    content=`<div style="padding:48px 0;text-align:center;color:var(--by-mid);font-size:13px">${TABS.find(t=>t.id===tab)?.lb} content</div>`;
+  }
+
+  return `<div class="by-pg" style="padding-bottom:0">
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;color:var(--by-mid);margin-bottom:4px">← Back</div>
+      <div style="font-size:26px;font-weight:700;color:var(--by-dark)">jpfahCwQ3v</div>
     </div>
-    <div class="by-ni by-ni-i">${byIco('st',13,'#1a4d6b')}<span>Three levels: <strong>No access</strong> · <strong>View only</strong> · <strong>Full access</strong>. Click toggle to cycle.</span></div>
-    <div style="display:grid;grid-template-columns:210px 1fr;gap:18px">
+    ${tabBar}
+    <div style="padding-top:0">${content}</div>
+  </div>`;
+}
+
+/* Extracted roles content — called from byCompanies Roles tab */
+/* ── ROLES & PERMISSIONS — standalone MVP page ── */
+function byRolesPage(){
+  const inner = byRolesContent();
+  return `<div class="by-pg">
+    <!-- Page header -->
+    <div style="margin-bottom:20px">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
+        <div class="by-pt" style="margin-bottom:0">Roles & Permissions</div>
+      </div>
+      <div style="font-size:13px;color:var(--by-mid);max-width:560px;line-height:1.5">
+        Manage what each predefined role can access across Boatyard Sales. Permissions are feature-based — no technical configuration needed.
+      </div>
+    </div>
+    <!-- Future work notice: Team & Users -->
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:#f9f8f6;border:1px solid #e8e4df;border-radius:8px;margin-bottom:20px;font-size:12.5px;color:#8a7a6a;line-height:1.5">
+      ${byIco('us',14,'#b8b0a8')}
+      <span><strong style="color:#6a5f55">Team & Users</strong> — inviting users, managing assignments, and pending invites will be available in a future release.</span>
+    </div>
+    ${inner}
+  </div>`;
+}
+
+function byRolesContent(){
+  const sel=S.byRolesSel;
+  const perms=S.byRolesP;
+  const summaryOpen=S.byRolesSummaryOpen!==false;
+  const groups=[...new Set(BY_FEATS.map(f=>f.g))];
+
+  function toggleStyle(opt,active){
+    if(!active) return 'background:#dde5ec';
+    return opt==='view'?'background:var(--by-teal);opacity:.6':'background:var(--by-teal)';
+  }
+
+  // Role selector cards
+  let roleCards='';
+  BY_ROLES.forEach(r=>{
+    const on=sel===r.name;
+    roleCards+=`<div onclick="S.byRolesSel='${r.name}';S.byRolesP={...BY_PM['${r.name}']};renderByPage()"
+      style="padding:10px 12px;background:${on?'var(--by-teal)':'#fff'};border:1.5px solid ${on?'var(--by-teal)':'var(--by-border)'};border-radius:8px;cursor:pointer;transition:all .13s;margin-bottom:4px;display:flex;align-items:center;gap:9px">
+      <span class="by-tag ${r.cls}">${r.name}</span>
+      <span style="font-size:11.5px;color:${on?'rgba(255,255,255,.75)':'var(--by-mid)'};flex:1">${r.users} users</span>
+      ${on?'<svg width="12" height="12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="1.5,6 4.5,9.5 10.5,3"/></svg>':''}
+    </div>`;
+  });
+
+  // Feature rows
+  function featureRow(ft){
+    const lv=perms[ft.id]||'none';
+    const dotStyles={
+      full:{active:'background:var(--by-teal)',inactive:'background:#e2e8f0'},
+      view:{active:'background:var(--by-teal);opacity:.55',inactive:'background:#e2e8f0'},
+      none:{active:'background:#e2e8f0',inactive:'background:#e2e8f0'},
+    };
+    const lvLabels={none:'No Access',view:'View Only',full:'Full Access'};
+    let rows='';
+    ['none','view','full'].forEach((opt,oi)=>{
+      const active=lv===opt;
+      rows+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;${oi<2?'border-bottom:1px solid #f4f7fa':''}">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:7px;height:7px;border-radius:50%;${active?dotStyles[opt].active:dotStyles[opt].inactive};flex-shrink:0;transition:all .15s"></div>
+          <span style="font-size:13px;font-weight:${active?500:400};color:${active?'var(--by-dark)':'#9aabb8'};transition:color .15s">${lvLabels[opt]}</span>
+        </div>
+        <button class="by-tgl ${active?'on':'off'}" onclick="S.byRolesP['${ft.id}']='${opt}';renderByPage()" style="${toggleStyle(opt,active)}"></button>
+      </div>`;
+    });
+    const curDot=lv==='full'?'background:var(--by-teal)':lv==='view'?'background:var(--by-teal);opacity:.5':'background:#dde5ec';
+    return `<div style="padding:14px 16px;border-bottom:1px solid var(--by-border)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--by-dark)">${ft.label}</div>
+          <div style="font-size:11.5px;color:var(--by-mid);margin-top:2px">${ft.desc}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;margin-left:12px;flex-shrink:0;margin-top:3px">
+          <div style="width:8px;height:8px;border-radius:50%;${curDot}"></div>
+          <span style="font-size:12px;color:${lv==='none'?'#9aabb8':'var(--by-teal)'};font-weight:${lv==='none'?400:500}">${lvLabels[lv]}</span>
+        </div>
+      </div>
+      <div style="background:#f8fafc;border-radius:7px;padding:2px 12px 4px;border:1px solid #edf2f7">${rows}</div>
+    </div>`;
+  }
+
+  // Feature groups
+  let featGroups='';
+  groups.forEach(g=>{
+    const feats=BY_FEATS.filter(f=>f.g===g);
+    let rows=''; feats.forEach(f=>{ rows+=featureRow(f); });
+    featGroups+=`<div class="by-card" style="margin-bottom:12px;overflow:hidden;padding:0">
+      <div style="padding:9px 16px;background:var(--by-dark);display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#fff">${g}</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.45)">${feats.length} feature${feats.length>1?'s':''}</span>
+      </div>
+      ${rows}
+    </div>`;
+  });
+
+  // Summary
+  const fullF=BY_FEATS.filter(f=>(perms[f.id]||'none')==='full');
+  const viewF=BY_FEATS.filter(f=>(perms[f.id]||'none')==='view');
+  const noneF=BY_FEATS.filter(f=>(perms[f.id]||'none')==='none');
+
+  function summarySection(feats,color,opacity,label){
+    if(!feats.length) return '';
+    let items='';
+    feats.forEach(f=>{
+      items+=`<div style="font-size:12.5px;color:var(--by-dark);padding:3px 0 3px 14px;border-left:2px solid ${color};opacity:${opacity||1};margin-bottom:2px">${f.label}</div>`;
+    });
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${color};opacity:${opacity||1}"></div>
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--by-mid)">${label}</span>
+        <span style="font-size:10px;color:var(--by-mid);opacity:.6">${feats.length}</span>
+      </div>
+      ${items}
+    </div>`;
+  }
+
+  let noneSection='';
+  if(noneF.length){
+    let noneItems='';
+    noneF.forEach(f=>{ noneItems+=`<div style="font-size:11.5px;color:#9aabb8;padding:2px 0 2px 14px;border-left:2px solid #dde5ec;margin-bottom:1px">${f.label}</div>`; });
+    noneSection=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--by-border)">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <div style="width:8px;height:8px;border-radius:50%;background:#dde5ec"></div>
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--by-mid)">No Access</span>
+        <span style="font-size:10px;color:var(--by-mid);opacity:.6">${noneF.length}</span>
+      </div>
+      ${noneItems}
+    </div>`;
+  }
+
+  const summaryBody=`<div style="padding:13px 14px">
+    <div style="font-size:13px;font-weight:600;color:var(--by-dark);margin-bottom:12px">${sel}</div>
+    ${summarySection(fullF,'var(--by-teal)',null,'Full Access')}
+    ${summarySection(viewF,'var(--by-teal)',0.5,'View Only')}
+    ${noneSection}
+  </div>`;
+
+  // Assigned users
+  const assignedUsers=BY_USERS.filter(u=>u.role===sel);
+  let usersList='';
+  if(assignedUsers.length){
+    let usersHtml='';
+    assignedUsers.forEach(u=>{ usersHtml+=`<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><div class="by-av2">${u.av}</div><span style="font-size:12px;color:var(--by-dark)">${u.name}</span></div>`; });
+    usersList=`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--by-border)">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--by-mid);margin-bottom:6px">Assigned users</div>
+      ${usersHtml}
+    </div>`;
+  }
+
+  const roleObj=BY_ROLES.find(r=>r.name===sel);
+
+  return `<div style="padding-top:0">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div></div>
+      <button class="by-btn by-bp" onclick="alert('Changes saved.')">Save Changes</button>
+    </div>
+    <div style="display:grid;grid-template-columns:200px 1fr 220px;gap:18px;align-items:start">
       <div>
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#8796a8;margin-bottom:9px">Select Role</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--by-mid);margin-bottom:9px">Select Role</div>
         ${roleCards}
-        <div class="by-card" style="padding:13px 14px;margin-top:7px">
-          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:#8796a8;margin-bottom:7px">Summary</div>
-          <div style="font-size:13px;color:#4a5568;line-height:1.6">${BY_ROLES.find(r=>r.name===sel)?.desc}</div>
+        <div class="by-card" style="padding:12px 13px;margin-top:8px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--by-mid);margin-bottom:6px">About</div>
+          <div style="font-size:12.5px;color:var(--by-dark);line-height:1.6">${roleObj?roleObj.desc:''}</div>
+          ${usersList}
         </div>
       </div>
       <div>
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#8796a8;margin-bottom:9px">Feature Access — ${sel}</div>
-        ${featGrps}
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--by-mid);margin-bottom:9px">Feature Access — ${sel}</div>
+        ${featGroups}
+      </div>
+      <div style="position:sticky;top:16px">
+        <button onclick="S.byRolesSummaryOpen=!S.byRolesSummaryOpen;renderByPage()"
+          style="width:100%;padding:9px 13px;background:${summaryOpen?'var(--by-teal)':'var(--by-dark)'};border:none;border-radius:${summaryOpen?'8px 8px 0 0':'8px'};cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#fff">Access Summary</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" style="transition:transform .2s;transform:${summaryOpen?'rotate(180deg)':'rotate(0)'}"><polyline points="2.5,5 7,9 11.5,5"/></svg>
+        </button>
+        ${summaryOpen?`<div class="by-card" style="border-radius:0 0 8px 8px;border-top:none">${summaryBody}</div>`:''}
       </div>
     </div>
   </div>`;
 }
+
 function byInvites(){
   const pending=[
     {name:"Diego Fuentes",   email:"d.fuentes@bluewave.com",  role:"Manager",cls:"btm",tenant:"BlueWave Boats",  sent:"1d ago",exp:"2d left"},
