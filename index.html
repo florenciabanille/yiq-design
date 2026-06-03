@@ -519,7 +519,7 @@ const BY_USERS=[
 
 /* ════ STATE ════ */
 const S={
-  prod:"yiq",page:"users",byPage:"by-roles",
+  prod:"yiq",page:"users",byPage:"by-users",
   sbCol:false,settOpen:true,byGrp:"by-settings",
   permRole:"Broker",permOv:{},
   fieldRole:"Broker",fieldFp:{...FD["Broker"]},
@@ -532,7 +532,7 @@ const S={
   invStep:0,invRole:"broker",
   uModalId:null,uModalTab:"overview",
   byRolesSel:"Manager",byRolesP:{...BY_PM["Manager"]},byRolesSummaryOpen:true,
-  byCompaniesTab:"company",
+  byCompaniesTab:"company",usersFilter:"all",byUsersFilter:"all",
   byInvStep:0,byInvRole:"manager",
 };
 
@@ -610,17 +610,13 @@ const MN=[
   {id:"centrals", lb:"Centrals & Deals",ic:"centrals"},
 ];
 const SN=[
-  {id:"users",      lb:"Team & Users",    ic:"users",       badge:null},
-  {id:"invites",    lb:"Pending Invites", ic:"invite",      badge:3},
-  {id:"roles",      lb:"Roles",           ic:"roles",       badge:null},
-  {id:"permissions",lb:"Permissions",     ic:"permissions", badge:null},
-  {id:"fields",     lb:"Field Visibility",ic:"fields",      badge:null},
-  {id:"effective",  lb:"Effective Access",ic:"effective",   badge:null},
-  {id:"impact",     lb:"Impact Analysis", ic:"impact",      badge:2},
-  {id:"audit",      lb:"Audit Log",       ic:"audit",       badge:null},
+  {id:"users",  lb:"Team & Users",        ic:"users",       badge:null},
+  {id:"roles",  lb:"Roles & Permissions", ic:"roles",       badge:null},
+  {id:"fields", lb:"Field Visibility",    ic:"fields",      badge:null},
+  {id:"audit",  lb:"Audit Log",           ic:"audit",       badge:null},
 ];
 const SIDs=new Set(SN.map(n=>n.id));
-const PM2={dashboard:"Dashboard",yachts:"Yachts",yachtshow:"Yachts Show",lists:"Lists & Shows",updates:"Yachts Updates",matches:"Yacht Matches",market:"Market Intelligence",shipyards:"Shipyards",emails:"Emails",centrals:"Centrals & Deals",users:"Team & Users",invites:"Pending Invites",roles:"Roles",permissions:"Permissions",fields:"Field Visibility",effective:"Effective Access",impact:"Impact Analysis",audit:"Audit Log"};
+const PM2={dashboard:"Dashboard",yachts:"Yachts",yachtshow:"Yachts Show",lists:"Lists & Shows",updates:"Yachts Updates",matches:"Yacht Matches",market:"Market Intelligence",shipyards:"Shipyards",emails:"Emails",centrals:"Centrals & Deals",users:"Team & Users",roles:"Roles & Permissions",fields:"Field Visibility",audit:"Audit Log"};
 let settOpen=true;
 
 function renderNav(){
@@ -722,55 +718,87 @@ function renderPage(){
   const el=document.getElementById('pc'); if(!el) return;
   if(!SIDs.has(S.page)){el.innerHTML='';return;}
   const pages={
-    users:renderUsers,invites:renderInvites,roles:renderRoles,
-    permissions:renderPermissions,
-    fields:renderFields,effective:renderEffective,
-    impact:renderImpact,audit:renderAudit,
+    users:renderUsers,
+    roles:renderRoles,
+    fields:renderFields,
+    audit:renderAudit,
   };
   el.innerHTML=(pages[S.page]||(()=>''))();
 }
 
 /* ── USERS ── */
 function renderUsers(){
-  // Scope chip with plain-language label inline in table
+  // Status filter state
+  const statusFilter=S.usersFilter||'all';
+  const PENDING=[
+    {id:91,name:"Sarah Mitchell",  email:"s.mitchell@njc.com",     av:"SM",role:"Broker",       scope:"brand",brand:"N&J",             status:"pending",last:"Invited 2d ago",invExpires:"1d left"},
+    {id:92,name:"Tom Keller",      email:"t.keller@burgess.com",   av:"TK",role:"Viewer",        scope:"brand",brand:"Burgess Yachts",  status:"pending",last:"Invited 4d ago",invExpires:"2d left"},
+    {id:93,name:"Maria Santos",    email:"m.santos@yiq.com",       av:"MS",role:"Admin",         scope:"all",  brand:"All Brands",      status:"pending",last:"Invited 1d ago",invExpires:"2d left"},
+  ];
+  const allUsers=[...USERS, ...PENDING];
+  const filtered=statusFilter==='all'?allUsers
+    :statusFilter==='active'?allUsers.filter(u=>u.status==='active')
+    :statusFilter==='pending'?allUsers.filter(u=>u.status==='pending')
+    :allUsers.filter(u=>u.status==='inactive');
+
   function scopeCell(u){
     const sd=SCOPES_DEF[u.scope]||SCOPES_DEF.brand;
-    return `<div>
-      <span class="sc-chip ${sd.cls}">${sd.short}</span>
-      <div style="font-size:10.5px;color:var(--g75);margin-top:2px;max-width:180px;white-space:normal;line-height:1.3">${sd.desc.split('.')[0]}.</div>
-    </div>`;
+    return `<span class="sc-chip ${sd.cls}">${sd.short}</span>`;
   }
-  const rows=USERS.map(u=>`<tr onclick="openUModal(${u.id})" style="cursor:pointer">
-    <td><div style="display:flex;align-items:center;gap:9px">${av(u.av,30)}<div><div class="tpri" style="font-size:13px">${u.name}</div><div style="font-size:11px;color:var(--g75)">${u.email}</div></div></div></td>
+
+  const rows=filtered.map(u=>`<tr onclick="openUModal(${u.id})" style="cursor:pointer">
+    <td><div style="display:flex;align-items:center;gap:9px">${av(u.av,30)}<div>
+      <div class="tpri" style="font-size:13px">${u.name}</div>
+      <div style="font-size:11px;color:var(--g75)">${u.email}</div>
+    </div></div></td>
     <td>${roleTag(u.role)}</td>
     <td>${scopeCell(u)}</td>
     <td style="font-size:12.5px;color:var(--g39)">${u.brand}</td>
-    <td><span class="tag ${u.status==='active'?'t-ok':'t-wn'}">${u.status}</span></td>
+    <td>
+      <span class="tag ${u.status==='active'?'t-ok':u.status==='pending'?'t-wn':'t-mu'}">${u.status}</span>
+      ${u.invExpires?`<div style="font-size:10px;color:var(--g75);margin-top:2px">${u.invExpires}</div>`:''}
+    </td>
     <td style="font-size:12px;color:var(--g75)">${u.last}</td>
-    <td><button class="btn bg bsm" onclick="event.stopPropagation();openUModal(${u.id})">→</button></td>
+    <td>
+      ${u.status==='pending'
+        ?`<div style="display:flex;gap:4px"><button class="btn bg bsm" onclick="event.stopPropagation()">Resend</button><button class="btn bd bsm" onclick="event.stopPropagation()">Revoke</button></div>`
+        :`<button class="btn bg bsm" onclick="event.stopPropagation();openUModal(${u.id})">→</button>`
+      }
+    </td>
   </tr>`).join('');
+
+  // Status tabs
+  const tabs=[
+    {id:'all',     lb:'All',     n:allUsers.length},
+    {id:'active',  lb:'Active',  n:allUsers.filter(u=>u.status==='active').length},
+    {id:'pending', lb:'Pending', n:PENDING.length},
+  ];
+  const tabBar=tabs.map(t=>`<div onclick="S.usersFilter='${t.id}';renderPage()"
+    style="padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap;color:${statusFilter===t.id?'var(--g11)':'var(--g75)'};font-weight:${statusFilter===t.id?500:400};border-bottom:2px solid ${statusFilter===t.id?'var(--p)':'transparent'};margin-bottom:-1px;display:flex;align-items:center;gap:6px">
+    ${t.lb}
+    <span style="font-size:10px;padding:1px 6px;border-radius:999px;background:${statusFilter===t.id?'var(--p)':'var(--p50)'};color:${statusFilter===t.id?'white':'var(--g75)'};font-weight:600">${t.n}</span>
+  </div>`).join('');
+
   return `<div class="pg">
     <div class="pg-hd">
       <div><div class="pg-t">Team & Users</div><div class="pg-s">Manage who has access, their role, and which data they can see</div></div>
       <button class="btn bp" onclick="openInvite()">+ Invite User</button>
     </div>
-    <div class="g3" style="margin-bottom:16px">
-      ${[["Total",USERS.length],["Active",USERS.filter(u=>u.status==='active').length],["Pending",USERS.filter(u=>u.status==='pending').length]].map(([l,n])=>`<div class="kpi"><div class="kv">${n}</div><div class="kl">${l}</div></div>`).join('')}
+    <div class="g3" style="margin-bottom:18px">
+      ${[["Total",allUsers.length],["Active",allUsers.filter(u=>u.status==='active').length],["Pending",PENDING.length]].map(([l,n])=>`<div class="kpi"><div class="kv">${n}</div><div class="kl">${l}</div></div>`).join('')}
     </div>
     <div class="card">
-      <div class="ch" style="gap:10px;flex-wrap:wrap">
-        <input class="inp" style="width:220px" placeholder="Search users…" oninput="this.closest('.card').querySelectorAll('tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(this.value.toLowerCase())?'':'none')"/>
-        <select class="sel" onchange="this.closest('.card').querySelectorAll('tbody tr').forEach(r=>r.style.display=(!this.value||r.cells[1]?.textContent.trim()===this.value)?'':'none')">
-          <option value="">All Roles</option>${ROLES.map(r=>`<option value="${r.name}">${r.name}</option>`).join('')}
-        </select>
-        <select class="sel" onchange="this.closest('.card').querySelectorAll('tbody tr').forEach(r=>r.style.display=(!this.value||r.cells[2]?.textContent.includes(this.value))?'':'none')">
-          <option value="">All Scopes</option>${SCOPE_IDS.map(s=>`<option value="${SCOPES_DEF[s].short}">${SCOPES_DEF[s].lb}</option>`).join('')}
-        </select>
+      <div class="ch" style="justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--p150)">
+        <div style="display:flex">${tabBar}</div>
+        <div style="display:flex;gap:8px">
+          <input class="inp" style="width:200px" placeholder="Search users…" oninput="this.closest('.card').querySelectorAll('tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(this.value.toLowerCase())?'':'none')"/>
+          <select class="sel" onchange="this.closest('.card').querySelectorAll('tbody tr').forEach(r=>r.style.display=(!this.value||r.cells[1]?.textContent.trim()===this.value)?'':'none')">
+            <option value="">All Roles</option>${ROLES.map(r=>`<option value="${r.name}">${r.name}</option>`).join('')}
+          </select>
+        </div>
       </div>
       <div class="tw"><table><thead><tr>
-        <th>User</th><th>Role</th>
-        <th>Data Scope <span style="font-size:9px;font-weight:400;color:var(--g75);text-transform:none;letter-spacing:0">— assigned per user</span></th>
-        <th>Brand</th><th>Status</th><th>Last Active</th><th></th>
+        <th>User</th><th>Role</th><th>Scope</th><th>Brand</th><th>Status</th><th>Last Active</th><th></th>
       </tr></thead>
       <tbody>${rows}</tbody></table></div>
     </div>
@@ -805,32 +833,22 @@ function renderInvites(){
 /* ── ROLES — overview + role-detail (Improvement 1) ── */
 function renderRoles(){
   const v=S.rolesView;
-  // If a role is selected for detail view, show role detail
   if(S.roleDetailSel && v==='detail') return renderRoleDetail();
 
   let body='';
   if(v==='cards'){
     body=`<div class="g3">${ROLES.map(r=>`
-      <div class="card" style="cursor:pointer;transition:box-shadow .15s" onclick="S.roleDetailSel='${r.name}';S.rolesView='detail';renderPage()">
+      <div class="card" style="cursor:pointer" onclick="S.roleDetailSel='${r.name}';S.rolesView='detail';renderPage()">
         <div class="ch" style="justify-content:space-between">${roleTag(r.name)}<span style="font-size:12px;color:var(--g75)">${r.users} users</span></div>
         <div class="card-body" style="padding:12px 16px">
           <div style="font-size:13px;color:var(--g39);line-height:1.6;margin-bottom:10px">${r.desc}</div>
           <div class="dvd" style="margin-bottom:9px"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            ${_rolePermSummary(r.name)}
-          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${_rolePermSummary(r.name)}</div>
           <div style="margin-top:10px;font-size:11px;color:var(--p);font-weight:600">Configure role →</div>
         </div>
       </div>`).join('')}
-      <div class="card" style="cursor:pointer;border:1px dashed var(--p200);background:none" onclick="openRoleCreate()">
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:120px;gap:7px;padding:16px">
-          <div style="width:34px;height:34px;border-radius:50%;border:1.5px dashed var(--p200);display:flex;align-items:center;justify-content:center">${ico('plus',15,'var(--g75)')}</div>
-          <span style="font-size:13px;color:var(--g75)">Create Custom Role</span>
-        </div>
-      </div>
     </div>`;
   } else {
-    // Matrix view
     const cols=["Viewer","Broker","Listing Manager","Analyst","Admin"];
     let rows='';
     ENTITIES.forEach(en=>{
@@ -853,7 +871,7 @@ function renderRoles(){
     });
     body=`<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%">
       <thead><tr>
-        <th style="padding:10px 14px;background:var(--p25);border-bottom:2px solid var(--p150);text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--g39);position:sticky;left:0;z-index:2">ENTITY / ACTION</th>
+        <th style="padding:10px 14px;background:var(--p25);border-bottom:2px solid var(--p150);text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--g39)">ENTITY / ACTION</th>
         ${cols.map(r=>`<th style="padding:10px 14px;text-align:center;background:var(--p25);border-bottom:2px solid var(--p150);border-left:1px solid var(--p150);cursor:pointer;white-space:nowrap" onclick="S.roleDetailSel='${r}';S.rolesView='detail';renderPage()">${roleTag(r)}<div style="font-size:9px;color:var(--g75);font-weight:400;margin-top:2px">click to configure</div></th>`).join('')}
       </tr></thead>
       <tbody>${rows}</tbody>
@@ -861,11 +879,11 @@ function renderRoles(){
   }
   return `<div class="pg">
     <div class="pg-hd">
-      <div><div class="pg-t">Roles</div><div class="pg-s">Select a role to view and configure its full permission profile</div></div>
+      <div><div class="pg-t">Roles & Permissions</div><div class="pg-s">Select a role to configure its permissions, scope, and field access in one place</div></div>
       <div class="acts">
         <button class="btn ${v==='cards'?'bp':'bs'}" onclick="S.rolesView='cards';renderPage()">≡ Cards</button>
         <button class="btn ${v==='matrix'?'bp':'bs'}" onclick="S.rolesView='matrix';renderPage()">⊞ Matrix</button>
-        <button class="btn bs" onclick="S.compareOpen=true;renderPage()">⇄ Compare Roles</button>
+        <button class="btn bs" onclick="S.compareOpen=true;renderPage()">⇄ Compare</button>
         <button class="btn bp" onclick="openRoleCreate()">+ New Role</button>
       </div>
     </div>
@@ -874,7 +892,6 @@ function renderRoles(){
   </div>`;
 }
 
-// Helper: small permission summary chips for role cards
 function _rolePermSummary(roleName){
   const perms=PM[roleName]||{};
   let allowed=0,denied=0;
@@ -1862,7 +1879,7 @@ const BY_NAV=[
   {id:'by-costing',  lb:'Costing',   ic:'co',  subs:[]},
   {id:'by-companies',lb:'Companies', ic:'cm',  subs:[]},
   {id:'by-documents',lb:'Documents', ic:'dc',  subs:[]},
-  {id:'by-settings', lb:'Settings',  ic:'st',  subs:[{id:'by-roles',lb:'Roles & Permissions'}]},
+  {id:'by-settings', lb:'Settings',  ic:'st',  subs:[{id:'by-users',lb:'Team & Users'},{id:'by-roles',lb:'Roles & Permissions'}]},
 ];
 const BY_SETT=[];
 function byIco(n,sz=16,c='#8796a8'){
@@ -1937,6 +1954,7 @@ function renderByPage(){
     'by-models':byModels,
     'by-companies':byCompanies,
     'by-roles':byRolesPage,
+    'by-users':byUsersPage,
     'by-settings':(()=>''),
     'by-companies-list':(()=>''),'by-integrations':(()=>''),
   };
@@ -2019,6 +2037,68 @@ function byUsers(){
     </div>
   </div>`;
 }
+/* ── BOATYARD — TEAM & USERS ── */
+function byUsersPage(){
+  const filter=S.byUsersFilter||'all';
+  const PENDING_BY=[
+    {id:91,name:"Diego Fuentes",  email:"d.fuentes@bluewave.com", av:"DF",role:"Manager",cls:"btm",tenant:"BlueWave Boats",  status:"pending",last:"Invited 1d ago"},
+    {id:92,name:"Tanya Kowalski", email:"t.kowalski@seaquest.com",av:"TK",role:"Editor",  cls:"bte",tenant:"SeaQuest Marine", status:"pending",last:"Invited 3d ago"},
+  ];
+  const allUsers=[...BY_USERS,...PENDING_BY];
+  const filtered=filter==='all'?allUsers:allUsers.filter(u=>u.status===filter);
+
+  const tabs=[
+    {id:'all',    lb:'All',    n:allUsers.length},
+    {id:'active', lb:'Active', n:BY_USERS.filter(u=>u.status==='active').length},
+    {id:'pending',lb:'Pending',n:PENDING_BY.length},
+  ];
+  const tabBar=tabs.map(t=>`<div onclick="S.byUsersFilter='${t.id}';renderByPage()"
+    style="padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap;color:${filter===t.id?'var(--by-teal)':'var(--by-mid)'};font-weight:${filter===t.id?600:400};border-bottom:2px solid ${filter===t.id?'var(--by-teal)':'transparent'};margin-bottom:-2px;display:flex;align-items:center;gap:6px">
+    ${t.lb}
+    <span style="font-size:10px;padding:1px 6px;border-radius:999px;background:${filter===t.id?'var(--by-teal)':'var(--by-border)'};color:${filter===t.id?'white':'var(--by-mid)'};font-weight:600">${t.n}</span>
+  </div>`).join('');
+
+  const rows=filtered.map(u=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:8px">
+      <div class="by-av2">${u.av}</div>
+      <div><div style="font-weight:500;color:var(--by-dark)">${u.name}</div><div style="font-size:11px;color:var(--by-mid)">${u.email}</div></div>
+    </div></td>
+    <td><span class="by-tag ${u.cls}">${u.role}</span></td>
+    <td style="font-size:12.5px;color:var(--by-mid)">${u.tenant}</td>
+    <td><span class="by-tag ${u.status==='active'?'btok':'btwn'}">${u.status}</span></td>
+    <td style="font-size:12px;color:var(--by-mid)">${u.last}</td>
+    <td>
+      ${u.status==='pending'
+        ?`<div style="display:flex;gap:5px"><button class="by-btn by-bs by-bsm">Resend</button><button class="by-btn by-bsm" style="background:#fff;color:#cc3333;border:1px solid #cc3333">Revoke</button></div>`
+        :`<div style="display:flex;gap:5px"><button class="by-btn by-bs by-bsm">Edit</button><button class="by-btn by-bsm" style="background:#fff;color:#cc3333;border:1px solid #cc3333">Remove</button></div>`
+      }
+    </td>
+  </tr>`).join('');
+
+  return `<div class="by-pg">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div><div class="by-pt">Team & Users</div><div class="by-ps">Manage your team's access to Boatyard Sales</div></div>
+      <button class="by-btn by-bp" onclick="openByInvite()">+ Invite User</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+      ${[["Total",allUsers.length],["Active",BY_USERS.filter(u=>u.status==='active').length],["Pending",PENDING_BY.length]].map(([l,n])=>`<div class="by-kpi"><div class="by-kv">${n}</div><div class="by-kl">${l}</div></div>`).join('')}
+    </div>
+    <div class="by-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:2px solid var(--by-border)">
+        <div style="display:flex">${tabBar}</div>
+        <div style="display:flex;gap:8px;padding:8px 0">
+          <select class="sel" style="height:32px;border-color:var(--by-border)"><option>All Roles</option>${BY_ROLES.map(r=>`<option>${r.name}</option>`).join('')}</select>
+          <select class="sel" style="height:32px;border-color:var(--by-border)"><option>All Tenants</option><option>BlueWave Boats</option><option>Marine Peak</option><option>SeaQuest Marine</option></select>
+        </div>
+      </div>
+      <div style="overflow-x:auto"><table class="by-tbl">
+        <thead><tr><th>User</th><th>Role</th><th>Tenant</th><th>Status</th><th>Last Active</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
 function byCompanies(){
   const tab=S.byCompaniesTab||'company';
   const TABS=[
